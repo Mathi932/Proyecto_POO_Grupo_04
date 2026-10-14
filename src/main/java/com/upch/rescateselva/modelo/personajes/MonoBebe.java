@@ -7,31 +7,14 @@ import java.awt.Graphics2D;
 public class MonoBebe extends AnimalAtrapado {
 
     public MonoBebe(int x, int y) {
-        super(x, y, 30, 34, "Mono Bebé", "empujar la roca", 75);
+        super(x, y, 30, 34, "Mono Bebé", "abrir la jaula", 75);
         this.distanciaSeguimiento = 75;
         cargarSprite("mono.png");
     }
 
-    /** Mover la roca: hay que mantener la acción mientras se empuja. */
     @Override
     public void liberar() {
         avanzar();
-    }
-
-    @Override
-    protected void dibujarJaula(Graphics2D g) {
-        super.dibujarJaula(g);
-        int cx = x + ancho / 2;
-        int base = y + alto;
-        // la roca que bloquea; se desplaza a medida que se empuja
-        double avance = progreso / (double) requerido;
-        int rx = cx + 40 + (int) (50 * avance);
-        g.setColor(new Color(0x8a8a82));
-        g.fillOval(rx - 22, base - 38, 44, 38);
-        g.setColor(new Color(0xa8a8a0));
-        g.fillOval(rx - 14, base - 33, 16, 11);
-        g.setColor(new Color(0x5e5e58));
-        g.drawOval(rx - 22, base - 38, 44, 38);
     }
 
     @Override
