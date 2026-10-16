@@ -7,9 +7,6 @@ import com.upch.rescateselva.modelo.obstaculos.Distractor;
 import com.upch.rescateselva.modelo.obstaculos.Obstaculo;
 import com.upch.rescateselva.modelo.personajes.AnimalAtrapado;
 import com.upch.rescateselva.modelo.personajes.Jugador;
-import com.upch.rescateselva.niveles.estado.EstadoNivel;
-import com.upch.rescateselva.niveles.estado.Explorando;
-import com.upch.rescateselva.niveles.estado.Huyendo;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GradientPaint;
@@ -20,12 +17,13 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Un nivel del juego. Contiene (COMPOSICIÓN) sus enemigos, animales y obstáculos,
- * y delega su comportamiento por fases en un EstadoNivel (patrón State).
+ * Un nivel del juego. Reúne (AGREGACIÓN) sus enemigos, animales y obstáculos, que le
+ * entrega DisenoNiveles ya creados. Pasa por dos fases: ida (explorar hasta liberar al
+ * animal) y huida (volver a la salida).
  *
  * Qué hace en cada frame (actualizar): mueve plataformas, resuelve las colisiones
  * del jugador, actualiza animales/enemigos/obstáculos/distractores y finalmente
- * deja que la fase actual (Explorando/Huyendo) decida qué más pasa.
+ * cambia de fase (ida → huida) cuando corresponde.
  */
 public class Nivel {
 
@@ -49,7 +47,8 @@ public class Nivel {
     private final List<Integer> puntosDistractores = new ArrayList<>();
     private List<String> aliadosTipos = new ArrayList<>();
 
-    private EstadoNivel estado;
+    private boolean huyendo;        // false = fase de ida, true = fase de huida
+    private boolean huidaIniciada;
     private int tick;
     private boolean cronometroActivo;
     private int cronometroFrames;
@@ -62,7 +61,6 @@ public class Nivel {
         this.jugador = jugador;
         this.anchoMundo = anchoMundo;
         this.titulo = titulo;
-        this.estado = new Explorando();
     }
 
     // ------------------------------------------------------------------
@@ -159,8 +157,19 @@ public class Nivel {
         distractores.addAll(jugador.retirarLanzados());
         actualizarDistractores();
 
-        if (estado != null) {
-            estado.manejar(this);
+        if (!huyendo) {
+            // Fase de ida: en cuanto todos los animales quedan libres, empieza la huida.
+            if (todosLiberados()) {
+                anunciarLiberacion();
+                huyendo = true;
+            }
+        } else {
+            // Fase de huida / campamento.
+            if (!huidaIniciada) {
+                huidaIniciada = true;
+                iniciarHuida();
+            }
+            avanzarCronometro();
         }
     }
 
@@ -274,12 +283,8 @@ public class Nivel {
     }
 
     // ------------------------------------------------------------------
-    //  Cosas que usan los estados (State)
+    //  Fases del nivel
     // ------------------------------------------------------------------
-
-    public void cambiarEstado(EstadoNivel e) {
-        this.estado = e;
-    }
 
     public boolean todosLiberados() {
         if (animales.isEmpty()) {
@@ -354,7 +359,8 @@ public class Nivel {
         for (AnimalAtrapado a : animales) {
             a.marcarLiberado();
         }
-        cambiarEstado(new Huyendo());
+        huyendo = true;
+        huidaIniciada = false;
     }
 
     public void entrarEnCampamento() {
@@ -371,7 +377,7 @@ public class Nivel {
      */
     public boolean estaCompleto() {
         if (numero < 3) {
-            return estado instanceof Huyendo && jugador.getVida() > 0
+            return huyendo && jugador.getVida() > 0
                     && jugador.getX() <= salidaX + 80;
         }
         return campamento && jefe != null && jefe.huidaCompleta();
@@ -381,7 +387,7 @@ public class Nivel {
         if (campamento) {
             return jefe != null && jefe.estaAsustada() ? "¡La Serpiente huye!" : "Espanta a la Serpiente";
         }
-        if (estado instanceof Huyendo) {
+        if (huyendo) {
             return "¡Regresa a la salida!";
         }
         return animales.isEmpty() ? "" : "Rescata: " + animales.get(0).getNombre();
@@ -452,10 +458,6 @@ public class Nivel {
 
     public boolean estaEnCampamento() {
         return campamento;
-    }
-
-    public EstadoNivel getEstado() {
-        return estado;
     }
 
     // ------------------------------------------------------------------
@@ -556,7 +558,7 @@ public class Nivel {
         if (campamento || salidaX < 0) {
             return;
         }
-        boolean huyendo = estado instanceof Huyendo;
+        boolean huyendo = this.huyendo;
         int px = salidaX;
         g.setColor(new Color(0x5a3f24));
         g.fillRect(px, SUELO_Y - 90, 8, 90);
