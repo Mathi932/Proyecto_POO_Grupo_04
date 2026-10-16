@@ -5,7 +5,7 @@ import com.upch.rescateselva.modelo.enemigos.Enemigo;
 import com.upch.rescateselva.modelo.enemigos.Serpiente;
 
 /**
- * Patrón FACTORY METHOD (GoF).
+ * Patrón FACTORY (variante Simple Factory: un método de creación parametrizado).
  * Centraliza la creación de enemigos: quien necesita uno (los niveles) solo
  * pide un "tipo" y no necesita conocer qué clase concreta se instancia.
  */
