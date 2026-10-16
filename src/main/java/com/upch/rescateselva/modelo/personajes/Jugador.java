@@ -1,7 +1,6 @@
 package com.upch.rescateselva.modelo.personajes;
 
 import com.upch.rescateselva.modelo.obstaculos.Distractor;
-import com.upch.rescateselva.patrones.observer.PuntuacionSubject;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -9,7 +8,7 @@ import java.util.List;
 
 /**
  * Amaru, el guardaparques. Hereda de Personaje.
- * COMPOSICIÓN: el Jugador "tiene" su PuntuacionSubject (nace y muere con él).
+ * AGREGACIÓN: guarda en su inventario los Distractor (piedras) que recoge.
  * DEPENDENCIA: usa Distractor al lanzarlo.
  */
 public class Jugador extends Personaje {
@@ -22,13 +21,11 @@ public class Jugador extends Personaje {
     public static final int GRAVEDAD = 1;
     public static final int VEL_CAIDA_MAX = 16;
     public static final int MAX_DISTRACTORES = 5;
+    public static final int FPS = 60; // frames por segundo del juego (el tiempo se mide en frames)
 
-    private int puntuacion;
-    private int animalesRescatados;
-    private final PuntuacionSubject stats = new PuntuacionSubject();
+    private int framesJugados; // el tiempo total corre solo mientras se juega
     private boolean agotado;
     private boolean atrapado;
-    private boolean danioEnNivel;
     private final List<Distractor> inventario = new ArrayList<>();
     private final List<Distractor> lanzados = new ArrayList<>();
 
@@ -54,7 +51,6 @@ public class Jugador extends Personaje {
         this.seguroX = x;
         this.seguroY = y;
         cargarSprite("amaru.png");
-        actualizarStats();
     }
 
     // ------------------------------------------------------------------
@@ -87,9 +83,6 @@ public class Jugador extends Personaje {
         }
         a.liberar();
         if (a.isLiberado()) {
-            puntuacion += 100;
-            animalesRescatados++;
-            actualizarStats();
         }
     }
 
@@ -134,6 +127,7 @@ public class Jugador extends Personaje {
     @Override
     public void update() {
         tick++;
+        framesJugados++;
         prevX = x;
         prevY = y;
 
@@ -166,7 +160,7 @@ public class Jugador extends Personaje {
     }
 
     // ------------------------------------------------------------------
-    //  Daño, puntos y reinicios
+    //  Daño y reinicios
     // ------------------------------------------------------------------
 
     /** Tras recibir un golpe hay un momento de invulnerabilidad (parpadea). */
@@ -177,29 +171,23 @@ public class Jugador extends Personaje {
         }
         super.recibirDanio(cantidad);
         invulnerable = 70;
-        danioEnNivel = true;
-        actualizarStats();
     }
 
     /** Un cazador agotado te alcanza: fin del intento. */
     public void serAtrapado() {
         atrapado = true;
         setVida(0);
-        danioEnNivel = true;
-        actualizarStats();
     }
 
     /** Cae a un abismo: pierde vida y reaparece en el último suelo firme pisado. */
     public void caer() {
         super.recibirDanio(20);
-        danioEnNivel = true;
         invulnerable = 70;
         x = seguroX;
         y = seguroY;
         prevX = x;
         prevY = y;
         vy = 0;
-        actualizarStats();
     }
 
     /** Lo coloca en un punto sin que cuente como movimiento (cambio de escenario). */
@@ -217,16 +205,6 @@ public class Jugador extends Personaje {
         this.corriente = velocidadCorriente;
     }
 
-    public void sumarPuntos(int puntos) {
-        puntuacion += puntos;
-        actualizarStats();
-    }
-
-    public void setPuntuacion(int p) {
-        puntuacion = p;
-        actualizarStats();
-    }
-
     /** Deja al jugador listo para empezar (o repetir) un nivel. */
     public void reiniciarParaNivel(int inicioX, int inicioY) {
         x = inicioX;
@@ -239,18 +217,12 @@ public class Jugador extends Personaje {
         vy = 0;
         agotado = false;
         atrapado = false;
-        danioEnNivel = false;
         invulnerable = 0;
         cooldownLanzar = 0;
         enAgua = false;
         mirandoDerecha = true;
         inventario.clear();
         lanzados.clear();
-        actualizarStats();
-    }
-
-    private void actualizarStats() {
-        stats.setEstado(puntuacion, vida);
     }
 
     // ------------------------------------------------------------------
@@ -302,24 +274,13 @@ public class Jugador extends Personaje {
     //  Getters
     // ------------------------------------------------------------------
 
-    public int getPuntuacion() {
-        return puntuacion;
-    }
-
-    public int getAnimalesRescatados() {
-        return animalesRescatados;
-    }
-
-    public PuntuacionSubject getStats() {
-        return stats;
+    /** Tiempo total de juego (no cuenta menús, pausas ni pantallas entre niveles). */
+    public int getSegundosJugados() {
+        return framesJugados / FPS;
     }
 
     public int getCantidadDistractores() {
         return inventario.size();
-    }
-
-    public boolean recibioDanioEnNivel() {
-        return danioEnNivel;
     }
 
     public boolean isAtrapado() {

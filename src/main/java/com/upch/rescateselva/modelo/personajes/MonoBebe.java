@@ -3,7 +3,7 @@ package com.upch.rescateselva.modelo.personajes;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
-/** El Mono Bebé: una roca bloquea su jaula y hay que empujarla (unos 1,2 segundos). */
+/** El Mono Bebé: está en una jaula de barrotes que hay que abrir (unos 1,2 segundos). */
 public class MonoBebe extends AnimalAtrapado {
 
     public MonoBebe(int x, int y) {
@@ -12,6 +12,7 @@ public class MonoBebe extends AnimalAtrapado {
         cargarSprite("mono.png");
     }
 
+    /** Abrir la jaula: hay que mantener la acción hasta que ceda. */
     @Override
     public void liberar() {
         avanzar();
