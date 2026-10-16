@@ -1,6 +1,5 @@
 package com.upch.rescateselva.core;
 
-import com.upch.rescateselva.servicios.APIClient;
 import com.upch.rescateselva.modelo.enemigos.Serpiente;
 import com.upch.rescateselva.modelo.personajes.AnimalAtrapado;
 import com.upch.rescateselva.modelo.personajes.Jugador;
@@ -37,7 +36,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     public static final int ANCHO = Nivel.ANCHO_PANTALLA;
     public static final int ALTO = Nivel.ALTO_PANTALLA;
-    private static final int FPS = 60;
+    private static final int FPS = Jugador.FPS;
     private static final int INTENTOS_INICIALES = 3;
 
     private enum Pantalla { MENU, CONTROLES, HISTORIA, JUGANDO, PAUSA, NIVEL_COMPLETO, GAME_OVER, VICTORIA }
@@ -68,7 +67,6 @@ public class GamePanel extends JPanel implements Runnable {
     private int opcionMenu;
     private int paginaHistoria;
     private int vidasRestantes = INTENTOS_INICIALES;
-    private int puntosInicioNivel;
     private final List<String> aliadosTipos = new ArrayList<>();
     private int contadorNivelCompleto;
     private final List<String> lineasNivelCompleto = new ArrayList<>();
@@ -169,8 +167,7 @@ public class GamePanel extends JPanel implements Runnable {
                 case NIVEL_COMPLETO:
                     if (--contadorNivelCompleto <= 0) {
                         if (indiceNivel >= 2) {
-                            pantalla = Pantalla.VICTORIA;
-                            entrada.limpiar();
+                            terminarPartida(Pantalla.VICTORIA);
                         } else {
                             siguienteNivel();
                         }
@@ -248,6 +245,7 @@ public class GamePanel extends JPanel implements Runnable {
             hud.setTitulo(tituloMostrado);
         }
         hud.setObjetivo(nivelActual.getObjetivo());
+        hud.setEstadoJugador(jugador.getSegundosJugados(), jugador.getVida());
         hud.setPiedras(jugador.getCantidadDistractores());
         hud.setIntentos(vidasRestantes);
         hud.setCronometro(nivelActual.getSegundosRestantes(), jugador.estaAgotado());
@@ -265,7 +263,6 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void comenzarPartida() {
         jugador = new Jugador(100, Nivel.SUELO_Y - 44);
-        jugador.getStats().agregarObservador(hud);
         vidasRestantes = INTENTOS_INICIALES;
         aliadosTipos.clear();
         niveles = new ArrayList<>(Collections.nCopies(3, (Nivel) null));
@@ -283,7 +280,6 @@ public class GamePanel extends JPanel implements Runnable {
         if (desdeCampamento) {
             nivelActual.saltarACampamento();
         }
-        puntosInicioNivel = jugador.getPuntuacion();
         tituloMostrado = nivelActual.getTitulo();
         hud.setTitulo(tituloMostrado);
         hud.setObjetivo(nivelActual.getObjetivo());
@@ -292,23 +288,25 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     /** Pasa al nivel siguiente (el nivel anterior queda guardado en la lista). */
-   public void siguienteNivel() {
+    public void siguienteNivel() {
         if (indiceNivel + 1 >= niveles.size()) {
-            pantalla = Pantalla.VICTORIA;
-            APIClient.enviarPuntuacion("Amaru", jugador.getPuntuacion()); // <-- AGREGAR ESTA LÍNEA
+            terminarPartida(Pantalla.VICTORIA);
             return;
         }
         cargarNivel(indiceNivel + 1, false);
         pantalla = Pantalla.JUGANDO;
     }
 
+    /** Cierra la partida (victoria o game over). */
+    private void terminarPartida(Pantalla pantallaFinal) {
+        pantalla = pantallaFinal;
+        entrada.limpiar();
+    }
+
     private void perderIntento() {
         vidasRestantes--;
-        jugador.setPuntuacion(puntosInicioNivel);
         if (vidasRestantes <= 0) {
-            pantalla = Pantalla.GAME_OVER;
-            entrada.limpiar();
-            APIClient.enviarPuntuacion("Amaru", jugador.getPuntuacion()); // <-- AGREGAR ESTA LÍNEA
+            terminarPartida(Pantalla.GAME_OVER);
             return;
         }
         boolean enCampamento = nivelActual.estaEnCampamento();
@@ -318,18 +316,15 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void completarNivel() {
         lineasNivelCompleto.clear();
-        if (!jugador.recibioDanioEnNivel()) {
-            jugador.sumarPuntos(50);
-            lineasNivelCompleto.add("Sin recibir daño: +50");
-        }
         int numero = nivelActual.getNumero();
         if (numero == 1) {
             aliadosTipos.add("tucan");
+            lineasNivelCompleto.add("El Tucán se une a tu equipo");
         } else if (numero == 2) {
             aliadosTipos.add("mono");
+            lineasNivelCompleto.add("El Mono Bebé se une a tu equipo");
         } else {
-            jugador.sumarPuntos(150);
-            lineasNivelCompleto.add("Serpiente espantada: +150");
+            lineasNivelCompleto.add("Los tres animales están a salvo");
         }
         contadorNivelCompleto = 190;
         pantalla = Pantalla.NIVEL_COMPLETO;
@@ -483,7 +478,7 @@ public class GamePanel extends JPanel implements Runnable {
             texto(g, linea, ANCHO / 2, y, 20, Color.WHITE);
             y += 28;
         }
-        texto(g, "Puntos: " + jugador.getPuntuacion(), ANCHO / 2, y + 6, 22, new Color(0xb9f0cc));
+        texto(g, "Tiempo: " + formatoTiempo(jugador.getSegundosJugados()), ANCHO / 2, y + 6, 22, new Color(0xb9f0cc));
     }
 
     private void dibujarFinal(Graphics2D g, boolean victoria) {
@@ -501,9 +496,13 @@ public class GamePanel extends JPanel implements Runnable {
             texto(g, "GAME OVER", ANCHO / 2, 170, 60, new Color(0xffd0c0));
             texto(g, "Los animales siguen necesitando ayuda...", ANCHO / 2, 230, 24, Color.WHITE);
         }
-        int puntos = jugador == null ? 0 : jugador.getPuntuacion();
-        texto(g, "Puntaje final: " + puntos, ANCHO / 2, 380, 30, new Color(0xfff2b0));
+        int segundos = jugador == null ? 0 : jugador.getSegundosJugados();
+        texto(g, "Tiempo total: " + formatoTiempo(segundos), ANCHO / 2, 380, 30, new Color(0xfff2b0));
         texto(g, "Enter para volver al menú", ANCHO / 2, ALTO - 40, 18, new Color(0xf3f3f3));
+    }
+
+    private static String formatoTiempo(int segundos) {
+        return String.format("%02d:%02d", segundos / 60, segundos % 60);
     }
 
     private void velo(Graphics2D g, String titulo, String subtitulo) {
