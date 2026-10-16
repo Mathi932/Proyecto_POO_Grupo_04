@@ -1,6 +1,5 @@
 package com.upch.rescateselva.ui;
 
-import com.upch.rescateselva.patrones.observer.Observador;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -10,19 +9,18 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
 /**
- * Interfaz sobre la pantalla: puntuación, barra de vida, intentos, piedras,
+ * Interfaz sobre la pantalla: tiempo total de juego, barra de vida, intentos, piedras,
  * título del nivel (arriba al centro), objetivo (arriba a la derecha),
  * cronómetro y mensajes.
  *
- * Es un OBSERVADOR (patrón Observer): se entera de los cambios de puntuación y
- * vida porque el Jugador se los notifica. Hereda de JPanel; GamePanel le pide
- * que se dibuje encima del juego con dibujar().
+ * Hereda de JPanel. GamePanel le pasa los datos en cada frame (tiempo, vida, intentos...)
+ * y le pide que se dibuje encima del juego con dibujar().
  */
-public class HUD extends JPanel implements Observador {
+public class HUD extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private int puntuacion;
+    private int tiempoTotal;
     private int vida = 100;
     private int intentos = 3;
     private int piedras;
@@ -39,10 +37,9 @@ public class HUD extends JPanel implements Observador {
         setOpaque(false);
     }
 
-    /** Observer: llega cada vez que cambia la puntuación o la vida del jugador. */
-    @Override
-    public void actualizar(int puntuacion, int vida) {
-        this.puntuacion = puntuacion;
+    /** Tiempo total de juego (en segundos) y vida actual del jugador. */
+    public void setEstadoJugador(int segundos, int vida) {
+        this.tiempoTotal = segundos;
         this.vida = vida;
     }
 
@@ -93,12 +90,12 @@ public class HUD extends JPanel implements Observador {
     }
 
     public void dibujar(Graphics2D g, int w, int h) {
-        // ---- panel izquierdo: puntos, vida, intentos, piedras ----
+        // ---- panel izquierdo: tiempo total, vida, intentos, piedras ----
         g.setColor(new Color(0, 0, 0, 120));
         g.fillRoundRect(12, 12, 230, 84, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 16));
         g.setColor(Color.WHITE);
-        g.drawString("Puntos: " + puntuacion, 24, 34);
+        g.drawString(String.format("Tiempo: %02d:%02d", tiempoTotal / 60, tiempoTotal % 60), 24, 34);
 
         int bw = 150;
         g.setColor(new Color(60, 20, 20));
@@ -148,7 +145,7 @@ public class HUD extends JPanel implements Observador {
             }
         } else if (segundos >= 0) {
             Color c = segundos <= 10 ? new Color(0xff6a5a) : Color.WHITE;
-            textoCentrado(g, String.format("TIEMPO %02d:%02d", segundos / 60, segundos % 60), w / 2, 72, 24, c);
+            textoCentrado(g, String.format("HUIDA %02d:%02d", segundos / 60, segundos % 60), w / 2, 72, 24, c);
         }
 
         // ---- banner de inicio de nivel ----
