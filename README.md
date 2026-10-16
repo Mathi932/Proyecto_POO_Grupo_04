@@ -21,24 +21,24 @@ Videojuego de plataformas 2D desarrollado en Java SE para el curso de **Programa
 El jugador controla a **Amaru**, un explorador comprometido con el rescate y preservación de la fauna amazónica frente a cazadores clandestinos y trampas en la selva. El proyecto implementa los pilares de la POO, modularidad y patrones de diseño.
 
 ### 🛠️ Características Técnicas
-* **Arquitectura:** Game Loop a 60 FPS desacoplado (`GamePanel`), renderizado con Swing y AWT.
-* **Patrones GoF:**
-  * **Factory Method:** `FabricaEnemigos` para la instanciación limpia de adversarios (`Cazador`, `Serpiente`).
-  * **Observer:** `PuntuacionSubject` y `HUD` para actualización desacoplada de estadísticas y vida.
-  * **State:** `EstadoNivel` (`Explorando`, `Huyendo`) para el control de fases por nivel.
-* **Integración API REST:** Cliente `APIClient` asíncrono y tolerante a fallos para el registro remoto de puntuaciones.
+* **Arquitectura:** Game Loop a 60 FPS desacoplado (`GamePanel`), renderizado con Swing y AWT. 22 clases organizadas en paquetes (`core`, `modelo`, `niveles`, `patrones`, `ui`).
+* **Pilares de la POO:** abstracción (`Personaje`, `AnimalAtrapado`, `Enemigo`, `Obstaculo`), herencia, polimorfismo (`update()`, `dibujar()`, `liberar()`, `atacar()`, `afectar()`), encapsulamiento, y las relaciones de composición, agregación, asociación y dependencia.
+* **Patrón de diseño:** **Factory** — `FabricaEnemigos` crea los enemigos (`Cazador`, `Serpiente`) a partir de un tipo, sin que el nivel conozca la clase concreta.
+* **Reglas del juego:** el tiempo total de la partida se muestra en el HUD; tras liberar a los animales hay una fase de huida contra reloj hasta la salida.
 
 ---
 
 ## ⌨️ Controles
 * **Moverse:** Flechas direccionales izquierda / derecha (o `A` / `D`)
 * **Saltar:** Flecha arriba / Barra espaciadora / `W`
-* **Lanzar Distractor:** Tecla `F`
+* **Liberar al animal atrapado:** mantener `E`
+* **Lanzar una piedra (Distractor):** Tecla `F`
+* **Pausa:** `P` / `Esc`
 
 ---
 
 ## 🚀 Compilación y Ejecución
-Requiere **Java 21 LTS** y **Apache Maven**:
+Requiere **Java 17 (o superior)** y **Apache Maven**:
 
 ```bash
 # Compilar el proyecto
