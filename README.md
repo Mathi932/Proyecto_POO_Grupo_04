@@ -7,7 +7,7 @@ Videojuego de plataformas 2D desarrollado en Java SE para el curso de **Programa
 ## 👥 Integrantes (Grupo 04)
 * **Mathias Veramendi**
 * **Ríos Villar Juan de Dios**
-* **Varsola Sebastián**
+* **Barzola Sebastián**
 * **Elmer David**
 
 ## 👨‍🏫 Docentes
