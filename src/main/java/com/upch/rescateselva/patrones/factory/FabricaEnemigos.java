@@ -4,28 +4,27 @@ import com.upch.rescateselva.modelo.enemigos.Cazador;
 import com.upch.rescateselva.modelo.enemigos.Enemigo;
 import com.upch.rescateselva.modelo.enemigos.Serpiente;
 
-/**
- * Patrón FACTORY (variante Simple Factory: un método de creación parametrizado).
- * Centraliza la creación de enemigos: quien necesita uno (los niveles) solo
- * pide un "tipo" y no necesita conocer qué clase concreta se instancia.
- */
+// PATRÓN FACTORY (Simple Factory): único lugar donde se crean los enemigos
 public class FabricaEnemigos {
-
-    /**
-     * @param tipo "cazador" o "serpiente" (no distingue mayúsculas)
-     * @return un enemigo nuevo con sus valores por defecto
-     */
     public Enemigo crearEnemigo(String tipo) {
         if (tipo == null) {
             throw new IllegalArgumentException("El tipo de enemigo no puede ser null");
         }
         switch (tipo.toLowerCase()) {
             case "cazador":
-                return new Cazador();
+                return crearCazador();
             case "serpiente":
-                return new Serpiente();
+                return crearSerpiente();
             default:
                 throw new IllegalArgumentException("Tipo de enemigo desconocido: " + tipo);
         }
+    }
+
+    public Cazador crearCazador() {
+        return new Cazador();
+    }
+
+    public Serpiente crearSerpiente() {
+        return new Serpiente();
     }
 }

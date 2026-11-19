@@ -4,12 +4,7 @@ import com.upch.rescateselva.modelo.personajes.Jugador;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
-/**
- * Tramo de río turbio. Si el jugador cae al agua, la corriente lo empuja hacia
- * atrás, se mueve más lento y pierde un poco de vida hasta que trepa a un tronco.
- */
 public class Rio extends Obstaculo {
-
     private final int velocidadCorriente;
     private int cooldownDanio;
 
@@ -48,7 +43,7 @@ public class Rio extends Obstaculo {
     public void dibujar(Graphics2D g) {
         g.setColor(new Color(110, 96, 50, 170));
         g.fillRect(x, y, ancho, alto);
-        // olas
+
         g.setColor(new Color(170, 150, 90, 150));
         for (int i = x; i < x + ancho; i += 36) {
             int ola = (int) (3 * Math.sin((i * 0.07) + tick * 0.08));

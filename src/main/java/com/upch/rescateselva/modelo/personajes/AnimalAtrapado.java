@@ -6,16 +6,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 
-/**
- * Animal prisionero. Es abstracta: cada especie (Tucán, Mono, Jaguar) tiene su
- * propia forma de ser liberada (método liberar()) y su propio dibujo.
- *
- * Una vez liberado sigue al jugador y, en el campamento, ayuda a atacar a la
- * Serpiente (DEPENDENCIA con Enemigo): 2 de daño cada 5 segundos.
- */
 public abstract class AnimalAtrapado extends Personaje {
-
-    private static final int FRAMES_ENTRE_ATAQUES = 300; // 5 s a 60 FPS
+    private static final int FRAMES_ENTRE_ATAQUES = 300;
     private static final int DANIO_AYUDA = 2;
 
     private boolean liberado;
@@ -40,13 +32,8 @@ public abstract class AnimalAtrapado extends Personaje {
         this.requerido = requerido;
     }
 
-    /**
-     * Cada especie define su método de liberación. Se llama en cada frame mientras
-     * el jugador mantiene la tecla de acción; internamente suele llamar a avanzar().
-     */
     public abstract void liberar();
 
-    /** Suma un "paso" de progreso; al llegar a "requerido" el animal queda libre. */
     protected void avanzar() {
         if (liberado) {
             return;
@@ -58,13 +45,11 @@ public abstract class AnimalAtrapado extends Personaje {
         }
     }
 
-    /** Lo deja libre de inmediato (para los aliados que llegan al campamento). */
     public void marcarLiberado() {
         liberado = true;
         progreso = requerido;
     }
 
-    /** Ataca al objetivo asignado cada 5 segundos. */
     public void ayudarEnCombate() {
         if (!liberado || objetivoCombate == null || objetivoCombate.getVida() <= 0) {
             return;
@@ -85,7 +70,7 @@ public abstract class AnimalAtrapado extends Personaje {
         }
         if (!liberado) {
             if (!trabajando && progreso > 0) {
-                progreso = Math.max(0, progreso - 2); // si sueltas la tecla, se pierde avance
+                progreso = Math.max(0, progreso - 2);
             }
             trabajando = false;
             return;
@@ -121,9 +106,7 @@ public abstract class AnimalAtrapado extends Personaje {
         }
     }
 
-    // ------------------------------------------------------------------
-    //  Dibujo: animal + jaula (si sigue prisionero) o rayo de ayuda
-    // ------------------------------------------------------------------
+
 
     @Override
     public void dibujar(Graphics2D g) {
@@ -141,7 +124,6 @@ public abstract class AnimalAtrapado extends Personaje {
         }
     }
 
-    /** Jaula por defecto: barrotes verticales. Las subclases la personalizan. */
     protected void dibujarJaula(Graphics2D g) {
         int cx = x + ancho / 2;
         int base = y + alto;
@@ -185,9 +167,7 @@ public abstract class AnimalAtrapado extends Personaje {
         return dx <= 70 && dy <= 80;
     }
 
-    // ------------------------------------------------------------------
-    //  Getters / setters
-    // ------------------------------------------------------------------
+
 
     public boolean isLiberado() {
         return liberado;

@@ -5,12 +5,7 @@ import com.upch.rescateselva.modelo.personajes.Jugador;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
-/**
- * Cazador de "Los Extractores". Patrulla una zona, puede lanzar piedras
- * (nivel 2) y persigue al jugador cuando empieza la huida.
- */
 public class Cazador extends Enemigo {
-
     private static final int VEL_PATRULLA = 1;
     private static final int VEL_PERSECUCION = 3;
 
@@ -27,7 +22,6 @@ public class Cazador extends Enemigo {
         cargarSprite("cazador.png");
     }
 
-    // ---- configuración (la hace el nivel al construirlo) ----
 
     public void configurarPatrulla(int min, int max) {
         this.patrullaMin = min;
@@ -42,7 +36,7 @@ public class Cazador extends Enemigo {
         this.persigueAlDetectar = valor;
     }
 
-    /** Empieza a perseguir al jugador sin soltarlo. */
+    @Override
     public void activarPersecucion() {
         this.modoPersecucion = true;
     }
@@ -51,7 +45,6 @@ public class Cazador extends Enemigo {
         return modoPersecucion;
     }
 
-    // ---- comportamiento ----
 
     @Override
     public void update() {
@@ -108,10 +101,6 @@ public class Cazador extends Enemigo {
         mirandoDerecha = objetivo.getX() > x;
     }
 
-    /**
-     * Si el jugador está agotado, lo atrapa (fin del intento). Si no, le hace daño.
-     * Un cazador aturdido no puede atacar.
-     */
     @Override
     public void atacar(Jugador j) {
         if (!activo || aturdido > 0) {
@@ -124,7 +113,6 @@ public class Cazador extends Enemigo {
         }
     }
 
-    /** Cada piedra que recibe lo aturde; si se queda sin vida, huye del juego. */
     @Override
     public void recibirDanio(int cantidad) {
         super.recibirDanio(cantidad);
@@ -137,36 +125,36 @@ public class Cazador extends Enemigo {
     @Override
     protected void dibujarPlaceholder(Graphics2D g) {
         int paso = (modoPersecucion || (patrullaMax > patrullaMin)) && aturdido == 0 ? ((tick / 8) % 2) * 3 : 0;
-        // piernas
+
         g.setColor(new Color(0x5a4a34));
         g.fillRect(-9, 34, 8, 14 - paso / 2);
         g.fillRect(1, 34, 8, 14 - (3 - paso) / 2);
         g.setColor(new Color(0x2a2016));
         g.fillRect(-10, 46, 10, 2);
         g.fillRect(0, 46, 10, 2);
-        // torso (chaleco caqui)
+
         g.setColor(new Color(0xa38d5d));
         g.fillRoundRect(-12, 17, 24, 20, 6, 6);
         g.setColor(new Color(0x6e5c36));
         g.fillRect(-12, 27, 24, 3);
-        // brazo
+
         g.setColor(new Color(0x8c774c));
         g.fillRoundRect(6, 19, 8, 16, 5, 5);
-        // pañuelo rojo
+
         g.setColor(new Color(0xb32d24));
         g.fillRect(-7, 16, 14, 4);
-        // cabeza
+
         g.setColor(new Color(0xd9ab82));
         g.fillOval(-8, 3, 16, 16);
-        // sombrero ancho
+
         g.setColor(new Color(0x5c4326));
         g.fillRoundRect(-14, 6, 28, 4, 3, 3);
         g.fillArc(-8, -3, 16, 14, 0, 180);
-        // ceja y ojo (cara de pocos amigos)
+
         g.setColor(Color.BLACK);
         g.fillOval(3, 11, 3, 3);
         g.drawLine(1, 9, 7, 11);
-        // bigote
+
         g.setColor(new Color(0x3b2a1a));
         g.fillRect(2, 15, 7, 2);
     }

@@ -1,12 +1,14 @@
 package com.upch.rescateselva.niveles;
 
-import com.upch.rescateselva.modelo.enemigos.Cazador;
 import com.upch.rescateselva.modelo.enemigos.Enemigo;
 import com.upch.rescateselva.modelo.enemigos.Serpiente;
 import com.upch.rescateselva.modelo.obstaculos.Distractor;
 import com.upch.rescateselva.modelo.obstaculos.Obstaculo;
 import com.upch.rescateselva.modelo.personajes.AnimalAtrapado;
 import com.upch.rescateselva.modelo.personajes.Jugador;
+import com.upch.rescateselva.niveles.estado.EstadoNivel;
+import com.upch.rescateselva.niveles.estado.Explorando;
+import com.upch.rescateselva.niveles.estado.Huyendo;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GradientPaint;
@@ -16,21 +18,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * Un nivel del juego. Reúne (AGREGACIÓN) sus enemigos, animales y obstáculos, que le
- * entrega DisenoNiveles ya creados. Pasa por dos fases: ida (explorar hasta liberar al
- * animal) y huida (volver a la salida).
- *
- * Qué hace en cada frame (actualizar): mueve plataformas, resuelve las colisiones
- * del jugador, actualiza animales/enemigos/obstáculos/distractores y finalmente
- * cambia de fase (ida → huida) cuando corresponde.
- */
 public class Nivel {
-
     public static final int ANCHO_PANTALLA = 960;
     public static final int ALTO_PANTALLA = 540;
     public static final int SUELO_Y = 460;
-    private static final int PASO = 24; // desnivel que el jugador sube sin saltar
+    private static final int PASO = 24;
 
     private final int numero;
     private final String titulo;
@@ -47,8 +39,7 @@ public class Nivel {
     private final List<Integer> puntosDistractores = new ArrayList<>();
     private List<String> aliadosTipos = new ArrayList<>();
 
-    private boolean huyendo;        // false = fase de ida, true = fase de huida
-    private boolean huidaIniciada;
+    private EstadoNivel estado; // STATE: contexto
     private int tick;
     private boolean cronometroActivo;
     private int cronometroFrames;
@@ -61,11 +52,10 @@ public class Nivel {
         this.jugador = jugador;
         this.anchoMundo = anchoMundo;
         this.titulo = titulo;
+        this.estado = new Explorando();
     }
 
-    // ------------------------------------------------------------------
-    //  Construcción (la usa DisenoNiveles)
-    // ------------------------------------------------------------------
+
 
     public void agregarPlataforma(Plataforma p) {
         plataformas.add(p);
@@ -82,10 +72,12 @@ public class Nivel {
 
     public void agregarEnemigo(Enemigo e) {
         e.setObjetivo(jugador);
-        if (e instanceof Serpiente && ((Serpiente) e).isJefe()) {
-            jefe = (Serpiente) e;
-        }
         enemigos.add(e);
+    }
+
+    public void agregarJefe(Serpiente s) {
+        jefe = s;
+        agregarEnemigo(s);
     }
 
     public void agregarPuntoDistractor(int x) {
@@ -118,11 +110,8 @@ public class Nivel {
         this.aliadosTipos = new ArrayList<>(tipos);
     }
 
-    // ------------------------------------------------------------------
-    //  Lógica por frame
-    // ------------------------------------------------------------------
 
-    /** Delega update()/afectar() a cada personaje y obstáculo y luego a la fase actual. */
+
     public void actualizar() {
         tick++;
         for (Plataforma p : plataformas) {
@@ -141,7 +130,7 @@ public class Nivel {
             int xAntes = e.getX();
             e.update();
             if (!ajustarASuelo(e)) {
-                e.setPosicion(xAntes, e.getY()); // no camina hacia el vacío
+                e.setPosicion(xAntes, e.getY());
             }
             distractores.addAll(e.retirarLanzados());
             if (e.isActivo() && e.getBounds().intersects(jugador.getBounds())) {
@@ -157,19 +146,8 @@ public class Nivel {
         distractores.addAll(jugador.retirarLanzados());
         actualizarDistractores();
 
-        if (!huyendo) {
-            // Fase de ida: en cuanto todos los animales quedan libres, empieza la huida.
-            if (todosLiberados()) {
-                anunciarLiberacion();
-                huyendo = true;
-            }
-        } else {
-            // Fase de huida / campamento.
-            if (!huidaIniciada) {
-                huidaIniciada = true;
-                iniciarHuida();
-            }
-            avanzarCronometro();
+        if (estado != null) {
+            estado.manejar(this); // STATE: delega en la fase actual
         }
     }
 
@@ -198,7 +176,7 @@ public class Nivel {
             } else if (jugador.getPrevX() >= p.getX() + p.getAncho() - 4) {
                 jugador.empujarX(p.getX() + p.getAncho());
             } else {
-                jugador.aterrizar(top); // atascado dentro: lo sacamos hacia arriba
+                jugador.aterrizar(top);
             }
         }
     }
@@ -211,13 +189,8 @@ public class Nivel {
         }
     }
 
-    /**
-     * Los enemigos "caminan" sobre la plataforma más alta que tengan a su alcance
-     * y saltan huecos de hasta ~45 px a cada lado (así cruzan de tronco en tronco).
-     * Devuelve false si no hay nada donde pararse (no debe avanzar hacia el vacío).
-     */
     private boolean ajustarASuelo(Enemigo e) {
-        if (e instanceof Serpiente && ((Serpiente) e).estaAsustada()) {
+        if (e.esIntocable()) {
             return true;
         }
         final int salto = 45;
@@ -262,10 +235,10 @@ public class Nivel {
             if (!d.isEnSuelo()) {
                 if (d.isLanzadoPorJugador()) {
                     for (Enemigo e : enemigos) {
-                        boolean intocable = e instanceof Serpiente && ((Serpiente) e).estaAsustada();
+                        boolean intocable = e.esIntocable();
                         if (e.isActivo() && !intocable && db.intersects(e.getBounds())) {
                             d.aplicarEfecto(e);
-                            d.recoger(); // se "gasta" al impactar
+                            d.recoger();
                             break;
                         }
                     }
@@ -274,7 +247,7 @@ public class Nivel {
                     d.recoger();
                 }
             } else if (db.intersects(jugador.getBounds()) && jugador.agregarDistractor(d)) {
-                d.recoger(); // recogida automática, sin tecla
+                d.recoger();
             }
             if (d.getY() > 1000 || d.getX() < -200 || d.getX() > anchoMundo + 200) {
                 d.recoger();
@@ -282,9 +255,11 @@ public class Nivel {
         }
     }
 
-    // ------------------------------------------------------------------
-    //  Fases del nivel
-    // ------------------------------------------------------------------
+
+
+    public void cambiarEstado(EstadoNivel e) {
+        this.estado = e;
+    }
 
     public boolean todosLiberados() {
         if (animales.isEmpty()) {
@@ -305,7 +280,6 @@ public class Nivel {
                 : "¡" + nombre + " liberado! ¡Entra al campamento!";
     }
 
-    /** Se llama una vez al empezar la fase de huida. */
     public void iniciarHuida() {
         switch (numero) {
             case 1:
@@ -318,9 +292,7 @@ public class Nivel {
                 cronometroActivo = true;
                 cronometroFrames = 35 * 60;
                 for (Enemigo e : enemigos) {
-                    if (e instanceof Cazador) {
-                        ((Cazador) e).activarPersecucion();
-                    }
+                    e.activarPersecucion();
                 }
                 soltarDistractores();
                 mensaje = "¡El Cazador te persigue! ¡Corre!";
@@ -337,7 +309,6 @@ public class Nivel {
         }
     }
 
-    /** Se acaba el cronómetro => el jugador se agota (casi no puede moverse). */
     public void avanzarCronometro() {
         if (!cronometroActivo) {
             return;
@@ -354,30 +325,22 @@ public class Nivel {
         }
     }
 
-    /** Usado al reintentar el nivel 3 tras morir en la pelea final. */
     public void saltarACampamento() {
         for (AnimalAtrapado a : animales) {
             a.marcarLiberado();
         }
-        huyendo = true;
-        huidaIniciada = false;
+        cambiarEstado(new Huyendo());
     }
 
     public void entrarEnCampamento() {
         this.campamento = true;
     }
 
-    // ------------------------------------------------------------------
-    //  Consultas
-    // ------------------------------------------------------------------
 
-    /**
-     * Niveles 1 y 2: completado al volver a la salida con el animal liberado.
-     * Nivel 3: completado cuando la Serpiente ya huyó de la pantalla.
-     */
+
     public boolean estaCompleto() {
         if (numero < 3) {
-            return huyendo && jugador.getVida() > 0
+            return estado.enHuida() && jugador.getVida() > 0
                     && jugador.getX() <= salidaX + 80;
         }
         return campamento && jefe != null && jefe.huidaCompleta();
@@ -387,13 +350,12 @@ public class Nivel {
         if (campamento) {
             return jefe != null && jefe.estaAsustada() ? "¡La Serpiente huye!" : "Espanta a la Serpiente";
         }
-        if (huyendo) {
+        if (estado.enHuida()) {
             return "¡Regresa a la salida!";
         }
         return animales.isEmpty() ? "" : "Rescata: " + animales.get(0).getNombre();
     }
 
-    /** Segundos que quedan en el cronómetro, o -1 si no hay cronómetro activo. */
     public int getSegundosRestantes() {
         return cronometroActivo ? (int) Math.ceil(cronometroFrames / 60.0) : -1;
     }
@@ -460,23 +422,22 @@ public class Nivel {
         return campamento;
     }
 
-    // ------------------------------------------------------------------
-    //  Dibujo
-    // ------------------------------------------------------------------
+    public EstadoNivel getEstado() {
+        return estado;
+    }
 
-    /** Fondo con parallax (se dibuja sin la cámara). */
+
+
     public void dibujarFondo(Graphics2D g, int camX) {
         Color[] c = paleta();
         g.setPaint(new GradientPaint(0, 0, c[0], 0, ALTO_PANTALLA, c[1]));
         g.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
 
-        // sol o luna
         g.setColor(c[5]);
         g.fillOval(700, 50, 80, 80);
         g.setColor(new Color(c[5].getRed(), c[5].getGreen(), c[5].getBlue(), 50));
         g.fillOval(680, 30, 120, 120);
 
-        // capa lejana: colinas (o ruinas)
         int lejos = (int) (camX * 0.12);
         int ancho = 280;
         for (int i = -1; i < ANCHO_PANTALLA / ancho + 3; i++) {
@@ -496,7 +457,6 @@ public class Nivel {
             }
         }
 
-        // capa media: árboles
         int medio = (int) (camX * 0.35);
         int sep = 170;
         for (int i = -1; i < ANCHO_PANTALLA / sep + 3; i++) {
@@ -510,10 +470,10 @@ public class Nivel {
             g.fillOval(bx - 14, 470 - altoTronco - 70, 70, 60);
         }
 
-        if (tema == 2) { // neblina del río
+        if (tema == 2) {
             g.setPaint(new GradientPaint(0, 300, new Color(255, 235, 190, 0), 0, 470, new Color(255, 235, 190, 110)));
             g.fillRect(0, 300, ANCHO_PANTALLA, 200);
-        } else if (tema == 4) { // fogata y tiendas
+        } else if (tema == 4) {
             int fx = 480 - (int) (camX * 0.5) % 1400 + 700;
             for (int k = -1; k <= 1; k++) {
                 int tx = ((fx + k * 1400) % 2800);
@@ -523,7 +483,6 @@ public class Nivel {
         }
     }
 
-    /** Todo lo que está dentro del mundo (el llamador ya aplicó la cámara). */
     public void dibujarMundo(Graphics2D g) {
         for (Plataforma p : plataformas) {
             p.dibujar(g);
@@ -545,7 +504,6 @@ public class Nivel {
         }
     }
 
-    /** Lo que va por delante del jugador (el agua). */
     public void dibujarFrente(Graphics2D g) {
         for (Obstaculo o : obstaculos) {
             if (o.esFrontal()) {
@@ -558,7 +516,7 @@ public class Nivel {
         if (campamento || salidaX < 0) {
             return;
         }
-        boolean huyendo = this.huyendo;
+        boolean huyendo = estado.enHuida();
         int px = salidaX;
         g.setColor(new Color(0x5a3f24));
         g.fillRect(px, SUELO_Y - 90, 8, 90);
@@ -578,7 +536,6 @@ public class Nivel {
         }
     }
 
-    /** {cieloArriba, cieloAbajo, colinas, copas, troncos, sol} según el tema. */
     private Color[] paleta() {
         switch (tema) {
             case 2:

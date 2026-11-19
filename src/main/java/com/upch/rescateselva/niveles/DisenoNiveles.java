@@ -15,27 +15,13 @@ import com.upch.rescateselva.patrones.factory.FabricaEnemigos;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Aquí está el "mapa" de los tres niveles (dónde va cada plataforma, trampa,
- * animal y enemigo). Separarlo de Nivel permite ajustar el diseño sin tocar la
- * lógica del nivel. Los enemigos se piden a FabricaEnemigos (Factory Method).
- *
- * Referencias de física (para diseñar): el jugador sube hasta 120 px de alto
- * saltando y salta unos 120 px de distancia; sube sin saltar escalones de 24 px.
- */
 public final class DisenoNiveles {
-
-    private static final FabricaEnemigos FABRICA = new FabricaEnemigos();
+    private static final FabricaEnemigos FABRICA = new FabricaEnemigos(); // FACTORY: el nivel es cliente
     private static final int S = Nivel.SUELO_Y;
 
     private DisenoNiveles() {
     }
 
-    /**
-     * @param numero         1, 2 o 3
-     * @param jugador        el jugador (se deja listo en la posición inicial)
-     * @param aliadosTipos   animales ya rescatados en niveles previos ("tucan", "mono")
-     */
     public static Nivel construir(int numero, Jugador jugador, List<String> aliadosTipos) {
         Nivel n;
         switch (numero) {
@@ -54,9 +40,7 @@ public final class DisenoNiveles {
         return n;
     }
 
-    // ------------------------------------------------------------------
-    //  NIVEL 1 - El Claro (tutorial: plataformas y trampas, sin enemigos)
-    // ------------------------------------------------------------------
+
     private static Nivel nivel1(Jugador j) {
         Nivel n = new Nivel(1, j, 3200, "Nivel 1 — El Claro");
         n.setTema(1);
@@ -72,16 +56,14 @@ public final class DisenoNiveles {
             n.agregarObstaculo(new Trampa(x, S - 24));
         }
         n.agregarAnimal(new Tucan(2980, S - 30));
-        // piedras que aparecen al empezar la vuelta (para aprender a lanzarlas)
+
         for (int x : new int[] {2700, 2050, 1400, 800}) {
             n.agregarPuntoDistractor(x);
         }
         return n;
     }
 
-    // ------------------------------------------------------------------
-    //  NIVEL 2 - El Río Turbio (troncos que se hunden + Cazador)
-    // ------------------------------------------------------------------
+
     private static Nivel nivel2(Jugador j) {
         Nivel n = new Nivel(2, j, 3700, "Nivel 2 — El Río Turbio");
         n.setTema(2);
@@ -100,7 +82,7 @@ public final class DisenoNiveles {
         }
         n.agregarAnimal(new MonoBebe(3250, S - 34));
 
-        Cazador c = (Cazador) FABRICA.crearEnemigo("cazador");
+        Cazador c = FABRICA.crearCazador();
         c.setPosicion(3450, S - c.getAlto());
         c.configurarPatrulla(3380, 3640);
         c.setLanzaPiedras(true);
@@ -112,9 +94,7 @@ public final class DisenoNiveles {
         return n;
     }
 
-    // ------------------------------------------------------------------
-    //  NIVEL 3 - Las Ruinas Escondidas (+ Campamento al liberar al Jaguar)
-    // ------------------------------------------------------------------
+
     private static Nivel nivel3(Jugador j) {
         Nivel n = new Nivel(3, j, 3600, "Nivel 3 — Las Ruinas Escondidas");
         n.setTema(3);
@@ -135,13 +115,13 @@ public final class DisenoNiveles {
             n.agregarObstaculo(new Trampa(x, S - 24));
         }
 
-        Cazador c = (Cazador) FABRICA.crearEnemigo("cazador");
+        Cazador c = FABRICA.crearCazador();
         c.setPosicion(1000, S - c.getAlto());
         c.configurarPatrulla(900, 1300);
         c.setPersigueAlDetectar(true);
         n.agregarEnemigo(c);
 
-        Serpiente s = (Serpiente) FABRICA.crearEnemigo("serpiente");
+        Serpiente s = FABRICA.crearSerpiente();
         s.setPosicion(1800, S - s.getAlto());
         s.configurarPatrulla(1750, 2130);
         n.agregarEnemigo(s);
@@ -150,15 +130,8 @@ public final class DisenoNiveles {
         return n;
     }
 
-    // ------------------------------------------------------------------
-    //  CAMPAMENTO - pasillo nuevo y separado donde se pelea con la Serpiente
-    // ------------------------------------------------------------------
 
-    /**
-     * Reemplaza todo el contenido del nivel 3 por el corredor del campamento:
-     * suelo largo, tres plataformas para esquivar, la Serpiente como jefe y
-     * los animales ya rescatados como aliados que ayudan a atacar.
-     */
+
     public static void prepararCampamento(Nivel n) {
         Jugador j = n.getJugador();
         List<AnimalAtrapado> previos = new ArrayList<>(n.getAnimales());
@@ -172,13 +145,12 @@ public final class DisenoNiveles {
             n.agregarPlataforma(new Plataforma(p[0], p[1], p[2], 24, Tipo.FIRME));
         }
 
-        Serpiente jefe = (Serpiente) FABRICA.crearEnemigo("serpiente");
+        Serpiente jefe = FABRICA.crearSerpiente();
         jefe.convertirEnJefe();
         jefe.setPosicion(1450, S - jefe.getAlto());
         jefe.configurarPatrulla(1000, 1500);
-        n.agregarEnemigo(jefe);
+        n.agregarJefe(jefe);
 
-        // el Jaguar recién liberado + los que se rescataron antes
         for (AnimalAtrapado a : previos) {
             a.setPosicion(60, S - a.getAlto());
             a.setObjetivoCombate(jefe);
@@ -194,7 +166,7 @@ public final class DisenoNiveles {
         }
 
         j.teletransportar(100, S - j.getAlto());
-        j.agregarDistractor(new Distractor(0, 0)); // municion inicial
+        j.agregarDistractor(new Distractor(0, 0));
         j.agregarDistractor(new Distractor(0, 0));
         n.entrarEnCampamento();
         n.setMensaje("¡Campamento de Los Extractores! ¡Espanta a la Serpiente!");

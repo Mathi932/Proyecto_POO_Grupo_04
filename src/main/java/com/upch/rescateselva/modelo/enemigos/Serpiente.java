@@ -6,13 +6,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 
-/**
- * La Serpiente. En las Ruinas (nivel 3) patrulla como un enemigo normal; en el
- * Campamento es el JEFE FINAL: 100 de vida (usa la vida heredada de Personaje),
- * lanza objetos y no se puede matar: al llegar a 0 se asusta y huye.
- */
 public class Serpiente extends Enemigo {
-
     private boolean jefe;
     private boolean asustada;
     private int tiempoHuida;
@@ -27,7 +21,6 @@ public class Serpiente extends Enemigo {
         cargarSprite("serpiente.png");
     }
 
-    /** La convierte en el jefe del campamento: más grande y con 100 de vida. */
     public void convertirEnJefe() {
         this.jefe = true;
         this.ancho = 130;
@@ -49,7 +42,11 @@ public class Serpiente extends Enemigo {
         return asustada;
     }
 
-    /** true cuando ya terminó de huir de la pantalla (cierra el combate). */
+    @Override
+    public boolean esIntocable() {
+        return asustada;
+    }
+
     public boolean huidaCompleta() {
         return asustada && tiempoHuida >= 110;
     }
@@ -73,7 +70,7 @@ public class Serpiente extends Enemigo {
         if (!activo || aturdido > 0 || objetivo == null) {
             return;
         }
-        // desplazamiento lento de lado a lado
+
         if (patrullaMax > patrullaMin) {
             x += dir * (jefe ? 1 : 1);
             if (x <= patrullaMin) {
@@ -88,7 +85,7 @@ public class Serpiente extends Enemigo {
             cooldownLanzar--;
             if (cooldownLanzar <= 0) {
                 lanzarObjeto();
-                cooldownLanzar = 140; // más seguido que el cazador
+                cooldownLanzar = 140;
             }
         }
     }
@@ -114,10 +111,6 @@ public class Serpiente extends Enemigo {
         }
     }
 
-    /**
-     * El jefe nunca muere: al llegar a 0 de vida se asusta y huye.
-     * Una Serpiente normal sí desaparece si se queda sin vida.
-     */
     @Override
     public void recibirDanio(int cantidad) {
         if (asustada) {
@@ -135,7 +128,6 @@ public class Serpiente extends Enemigo {
         }
     }
 
-    /** El jefe se aturde muy poco para que el combate no se vuelva trivial. */
     @Override
     public void aturdir(int frames) {
         super.aturdir(jefe ? Math.min(frames, 25) : frames);
@@ -164,12 +156,12 @@ public class Serpiente extends Enemigo {
             g.setColor(vientre);
             g.fillOval(sx - r / 2, sy + r / 3, r, r / 2);
         }
-        // cabeza
+
         int hx = w / 2 - (int) (h * 0.38);
         int hy = (int) (h * 0.62 - h * 0.30);
         g.setColor(cuerpo);
         g.fillOval(hx, hy, (int) (h * 0.62), (int) (h * 0.48));
-        if (jefe) { // cresta
+        if (jefe) {
             g.setColor(new Color(0xb33a2a));
             Polygon cresta = new Polygon();
             cresta.addPoint(hx + 6, hy + 2);
@@ -179,7 +171,7 @@ public class Serpiente extends Enemigo {
             cresta.addPoint(hx + 36, hy + 3);
             g.fillPolygon(cresta);
         }
-        // ojo
+
         g.setColor(new Color(0xffe14a));
         g.fillOval(hx + (int) (h * 0.30), hy + (int) (h * 0.08), 8, 8);
         g.setColor(Color.BLACK);
@@ -189,7 +181,7 @@ public class Serpiente extends Enemigo {
             g.fillOval(hx + 4, hy - 6, 4, 6);
             g.fillOval(hx + 14, hy - 10, 4, 6);
         }
-        // lengua
+
         if ((tick / 10) % 2 == 0 && !asustada) {
             g.setColor(new Color(0xd0213a));
             int lx = hx + (int) (h * 0.62);

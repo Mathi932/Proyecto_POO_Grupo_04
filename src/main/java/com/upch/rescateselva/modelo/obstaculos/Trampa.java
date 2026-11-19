@@ -6,9 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 
-/** Estacas de los cazadores clavadas en el suelo: -20 de vida al tocarlas. */
 public class Trampa extends Obstaculo {
-
     private final int danio = 20;
 
     public Trampa(int x, int y) {
@@ -22,7 +20,6 @@ public class Trampa extends Obstaculo {
         }
     }
 
-    /** La zona dolorosa es un poco más pequeña que el dibujo, para ser justos. */
     @Override
     public Rectangle getBounds() {
         return new Rectangle(x + 6, y + 6, ancho - 12, alto - 6);

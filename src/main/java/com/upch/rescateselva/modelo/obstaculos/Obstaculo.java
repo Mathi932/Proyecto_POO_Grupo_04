@@ -4,12 +4,7 @@ import com.upch.rescateselva.modelo.personajes.Jugador;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-/**
- * Clase base abstracta de todo lo que estorba o daña al jugador y no se mueve
- * por sí solo (trampas, río). Cada subclase define qué le hace al jugador.
- */
 public abstract class Obstaculo {
-
     protected int x;
     protected int y;
     protected int ancho;
@@ -23,7 +18,6 @@ public abstract class Obstaculo {
         this.alto = alto;
     }
 
-    /** Qué le pasa al jugador cuando está en contacto (o cerca) del obstáculo. */
     public abstract void afectar(Jugador j);
 
     public abstract void dibujar(Graphics2D g);
@@ -32,7 +26,6 @@ public abstract class Obstaculo {
         tick++;
     }
 
-    /** true = se dibuja delante del jugador (por ejemplo el agua). */
     public boolean esFrontal() {
         return false;
     }

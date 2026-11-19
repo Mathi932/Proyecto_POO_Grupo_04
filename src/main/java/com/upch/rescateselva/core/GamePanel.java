@@ -1,5 +1,6 @@
 package com.upch.rescateselva.core;
 
+import com.upch.rescateselva.servicios.APIClient;
 import com.upch.rescateselva.modelo.enemigos.Serpiente;
 import com.upch.rescateselva.modelo.personajes.AnimalAtrapado;
 import com.upch.rescateselva.modelo.personajes.Jugador;
@@ -21,17 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.swing.JPanel;
 
-/**
- * El corazón del juego: contiene el bucle principal (Runnable) que actualiza y
- * dibuja a 60 FPS, maneja las pantallas (menú, historia, juego, pausa, final) y
- * pasa de un nivel a otro. Es la clase que integra el trabajo de todos los módulos.
- *
- * Hereda de JPanel (para poder dibujar) e implementa Runnable (para correr en un
- * hilo propio): en Java una clase solo puede extender UNA clase, pero puede
- * implementar varias interfaces.
- */
 public class GamePanel extends JPanel implements Runnable {
-
     private static final long serialVersionUID = 1L;
 
     public static final int ANCHO = Nivel.ANCHO_PANTALLA;
@@ -82,11 +73,8 @@ public class GamePanel extends JPanel implements Runnable {
         fondoMenu.setTema(1);
     }
 
-    // ------------------------------------------------------------------
-    //  Bucle principal
-    // ------------------------------------------------------------------
 
-    /** Arranca el hilo del juego (lo llama VentanaJuego). */
+
     public void iniciarJuego() {
         if (hiloJuego != null) {
             return;
@@ -110,13 +98,13 @@ public class GamePanel extends JPanel implements Runnable {
             while (acumulado >= 1 && guardia++ < 5) {
                 try {
                     actualizar();
-                } catch (RuntimeException ex) { // un error en un frame no debe congelar el juego
+                } catch (RuntimeException ex) {
                     ex.printStackTrace();
                 }
                 acumulado -= 1;
             }
             if (guardia >= 5) {
-                acumulado = 0; // si el equipo se atrasó mucho, no intentamos "recuperar"
+                acumulado = 0;
             }
             repaint();
             try {
@@ -128,9 +116,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    // ------------------------------------------------------------------
-    //  Lógica por frame
-    // ------------------------------------------------------------------
+
 
     private void actualizar() {
         synchronized (lock) {
@@ -240,12 +226,11 @@ public class GamePanel extends JPanel implements Runnable {
             hud.mostrarMensaje(mensaje, 200);
         }
         hud.avanzar();
-        if (!nivelActual.getTitulo().equals(tituloMostrado)) { // p. ej. al entrar al campamento
+        if (!nivelActual.getTitulo().equals(tituloMostrado)) {
             tituloMostrado = nivelActual.getTitulo();
             hud.setTitulo(tituloMostrado);
         }
         hud.setObjetivo(nivelActual.getObjetivo());
-        hud.setEstadoJugador(jugador.getSegundosJugados(), jugador.getVida());
         hud.setPiedras(jugador.getCantidadDistractores());
         hud.setIntentos(vidasRestantes);
         hud.setCronometro(nivelActual.getSegundosRestantes(), jugador.estaAgotado());
@@ -257,12 +242,11 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    // ------------------------------------------------------------------
-    //  Flujo de la partida
-    // ------------------------------------------------------------------
+
 
     private void comenzarPartida() {
         jugador = new Jugador(100, Nivel.SUELO_Y - 44);
+        jugador.getStats().agregarObservador(hud); // OBSERVER: registro del HUD
         vidasRestantes = INTENTOS_INICIALES;
         aliadosTipos.clear();
         niveles = new ArrayList<>(Collections.nCopies(3, (Nivel) null));
@@ -287,7 +271,6 @@ public class GamePanel extends JPanel implements Runnable {
         entrada.limpiar();
     }
 
-    /** Pasa al nivel siguiente (el nivel anterior queda guardado en la lista). */
     public void siguienteNivel() {
         if (indiceNivel + 1 >= niveles.size()) {
             terminarPartida(Pantalla.VICTORIA);
@@ -297,10 +280,10 @@ public class GamePanel extends JPanel implements Runnable {
         pantalla = Pantalla.JUGANDO;
     }
 
-    /** Cierra la partida (victoria o game over). */
     private void terminarPartida(Pantalla pantallaFinal) {
         pantalla = pantallaFinal;
         entrada.limpiar();
+        APIClient.enviarTiempo("Amaru", jugador.getSegundosJugados());
     }
 
     private void perderIntento() {
@@ -331,9 +314,7 @@ public class GamePanel extends JPanel implements Runnable {
         entrada.limpiar();
     }
 
-    // ------------------------------------------------------------------
-    //  Dibujo
-    // ------------------------------------------------------------------
+
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -398,7 +379,6 @@ public class GamePanel extends JPanel implements Runnable {
         dibujarBarraJefe(g);
     }
 
-    /** La barra de vida de la Serpiente se lee directo de jefe.getVida(). */
     private void dibujarBarraJefe(Graphics2D g) {
         Serpiente jefe = nivelActual.getJefe();
         if (jefe == null || !nivelActual.estaEnCampamento()) {
@@ -512,7 +492,6 @@ public class GamePanel extends JPanel implements Runnable {
         texto(g, subtitulo, ANCHO / 2, ALTO / 2 + 36, 20, new Color(0xdfeede));
     }
 
-    // ---- utilidades de texto ----
 
     private void texto(Graphics2D g, String s, int cx, int baseY, int tamano, Color color) {
         g.setFont(new Font("SansSerif", Font.BOLD, tamano));
@@ -525,7 +504,6 @@ public class GamePanel extends JPanel implements Runnable {
         g.setStroke(new BasicStroke(1f));
     }
 
-    /** Escribe un párrafo partiéndolo en líneas según el ancho disponible. */
     private void parrafo(Graphics2D g, String texto, int x, int y, int ancho, int interlineado) {
         FontMetrics fm = g.getFontMetrics();
         StringBuilder linea = new StringBuilder();
