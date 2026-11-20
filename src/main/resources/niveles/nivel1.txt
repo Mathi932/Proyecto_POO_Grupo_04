@@ -1,0 +1,58 @@
+# NIVEL 1 - El Claro
+# Todas las medidas son en píxeles del juego. El suelo está a y = 460.
+# Un "top" menor significa más alto (top 390 = 70 px sobre el suelo).
+# Salto máximo de Amaru: 105 px de altura. Usa subidas de 70 px o menos.
+# Palabras que se pueden usar (ver niveles/LEEME.txt):
+#   piso x ancho | bloque x top ancho [base] | isla x top ancho | tronco x top ancho
+#   fragil x top ancho | lecho x ancho | rio x ancho | trampa x [top]
+#   piedra x [y] | animal tipo x | cazador x min max [piedras] [persigue]
+#   serpiente x min max
+
+nombre Nivel 1 — El Claro
+ancho 4800
+tema 1
+
+# Suelo (los huecos entre pisos son fosos)
+piso 0 1740
+piso 2120 1360
+piso 3820 980
+
+# Colina escalonada
+bloque 760 390 220
+bloque 980 330 140
+bloque 1120 390 140
+
+# Primer foso: islas que suben
+isla 1800 400 100
+isla 1960 370 90
+
+# Zigzag de islas
+bloque 2300 390 90
+isla 2450 330 100
+isla 2610 270 80
+isla 2760 330 120
+
+# Segundo foso: islas altas
+isla 3540 380 90
+isla 3660 310 70
+isla 3780 380 60
+
+# Mesa con trampa encima
+bloque 4100 390 300
+trampa 4240 390
+
+# Trampas en el suelo
+trampa 520
+trampa 1500
+trampa 1680
+trampa 3050
+trampa 3300
+
+# Piedras para lanzar
+piedra 1050 330
+piedra 2630 270
+piedra 1400
+piedra 3200
+
+# Animal atrapado (siempre al final) y su salida está al inicio
+animal tucan 4560

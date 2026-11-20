@@ -1,0 +1,60 @@
+# NIVEL 3 - Las Ruinas Escondidas
+# (ver el comentario de nivel1.txt para las medidas y palabras)
+# Al liberar al animal se pasa al campamento del jefe (eso está en el código).
+
+nombre Nivel 3 — Las Ruinas Escondidas
+ancho 5400
+tema 3
+
+# Suelo con cuatro fosos
+piso 0 700
+piso 1000 600
+piso 2000 600
+piso 3000 700
+piso 4100 1300
+
+# Foso 1: una plataforma frágil (se cae poco después de pisarla)
+fragil 800 430 100
+
+# Foso 2: dos pilares (la base 540 los hace llegar hasta abajo)
+bloque 1690 410 70 540
+bloque 1850 370 70 540
+
+# Foso 3: frágiles subiendo
+fragil 2670 430 80
+fragil 2800 380 80
+fragil 2910 330 70
+
+# Foso 4: un pilar y una frágil
+bloque 3800 400 60 540
+fragil 3950 380 90
+
+# Torre de ruinas
+bloque 3200 390 120
+isla 3370 320 90
+
+# Arco final
+bloque 4500 380 110
+isla 4680 330 140
+bloque 4900 390 100
+
+# Trampas
+trampa 380
+trampa 2250
+trampa 3600
+trampa 4300
+trampa 5100
+
+# Piedras
+piedra 500
+piedra 1050
+piedra 2050
+piedra 3050
+piedra 4800
+
+# Enemigos: cazador x min max [piedras] [persigue] / serpiente x min max
+cazador 1300 1100 1500 persigue
+serpiente 2100 2050 2500
+cazador 4300 4150 4400 persigue
+
+animal jaguar 5230

@@ -1,0 +1,61 @@
+# NIVEL 2 - El Río Turbio
+# (ver el comentario de nivel1.txt para las medidas y palabras)
+
+nombre Nivel 2 — El Río Turbio
+ancho 5550
+tema 2
+
+# Orilla de inicio y orilla final
+piso 0 1050
+piso 3270 2280
+
+# Río: el fondo (lecho) y el agua que hace daño
+lecho 1050 2220
+rio 1050 2220
+
+# Tocón del inicio
+bloque 300 400 140
+
+# Troncos (se hunden si te quedas encima)
+tronco 1090 430 110
+tronco 1260 410 100
+tronco 1420 390 90
+tronco 1580 420 110
+tronco 2060 380 90
+tronco 2220 340 80
+tronco 2370 380 100
+tronco 2520 420 110
+tronco 2680 400 90
+tronco 3080 420 100
+tronco 3190 440 70
+
+# Islas de descanso en medio del río (la base es el fondo del río: y = 520)
+bloque 1760 400 220 520
+bloque 2840 390 160 520
+
+# Colinas y pilar de la orilla final
+bloque 3950 390 200
+bloque 4150 330 100
+bloque 4250 390 200
+bloque 4800 380 80
+
+# Trampas
+trampa 520
+trampa 840
+trampa 3500
+trampa 3720
+trampa 4650
+
+# Piedras
+piedra 370 400
+piedra 680
+piedra 1840 400
+piedra 2900 390
+piedra 3620
+piedra 4200 330
+piedra 4950
+
+animal mono 5030
+
+# Cazador que lanza piedras: x min max
+cazador 5320 5250 5500 piedras

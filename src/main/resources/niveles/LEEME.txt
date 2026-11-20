@@ -1,0 +1,48 @@
+CÓMO EDITAR LOS NIVELES
+=======================
+
+Cada nivel es un archivo de texto: nivel1.txt, nivel2.txt y nivel3.txt.
+Una línea = un elemento. Todo lo que está después de # es un comentario.
+Medidas en píxeles del juego (la pantalla mide 960 x 540 y el suelo está en y = 460).
+"top" es la altura de la parte de arriba de una plataforma: MENOR top = MÁS ALTO.
+Ejemplo: top 390 queda a 70 px sobre el suelo; top 330, a 130 px.
+
+PALABRAS
+  nombre Texto           título que se muestra en el nivel
+  ancho 4800             largo total del nivel
+  tema 1                 fondo: 1 claro, 2 río, 3 ruinas
+  piso x ancho           tramo de suelo (los huecos entre pisos son fosos)
+  bloque x top ancho [base]   bloque de tierra desde "top" hasta el suelo (o hasta "base")
+  isla x top ancho       plataforma flotante delgada
+  tronco x top ancho     plataforma que se hunde si te quedas encima (río)
+  fragil x top ancho     plataforma que se cae poco después de pisarla
+  lecho x ancho          fondo del río (y = 520)
+  rio x ancho            agua que hace daño
+  trampa x [top]         trampa de púas; con "top" se pone encima de una plataforma
+  piedra x [y]           piedra en el suelo (o sobre una plataforma si pones y)
+  animal tucan|mono|jaguar x     animal atrapado (ponlo cerca del final del nivel)
+  cazador x min max [piedras] [persigue]   min y max son los extremos de su patrulla
+  serpiente x min max
+
+REGLAS PARA QUE SE PUEDA PASAR
+  - Amaru salta como máximo 105 px de alto: no pongas una plataforma a más de 70 px
+    sobre la anterior (o sobre el suelo).
+  - Entre dos plataformas deja un hueco de 100 px o menos (de borde a borde).
+  - No pongas una trampa debajo de una plataforma baja: el techo te frena el salto.
+  - Deja unos 150 px libres antes y después de cada trampa.
+  - La salida del nivel está al inicio (x = 40); el animal va al final.
+
+PROBAR (desde la carpeta del proyecto, la que tiene el pom.xml)
+  1. Compila una vez:            mvn compile
+  2. Edita src/main/resources/niveles/nivel1.txt (o 2, 3) y guarda. No hace falta compilar
+     de nuevo: el juego lee ese archivo al iniciar el nivel.
+  3. Para ir directo a un nivel (y a una posición x) sin pasar por el menú:
+        java -cp target/classes com.upch.rescateselva.Main --nivel 2 --x 3000
+  4. Para comprobar que todo se puede alcanzar sin recibir daño:
+        herramientas\validar-niveles.bat      (Windows)
+        herramientas/validar-niveles.sh       (Linux / Mac)
+     El mensaje "OK" significa que existe un camino sin daño; "PROBLEMA" dice qué plataforma
+     no se alcanza. No se simulan los enemigos (revisa a mano que se puedan esquivar).
+
+Si al iniciar el juego aparece "línea incorrecta", el mensaje indica cuál línea del archivo
+tiene un error (una palabra mal escrita o un número que falta).
