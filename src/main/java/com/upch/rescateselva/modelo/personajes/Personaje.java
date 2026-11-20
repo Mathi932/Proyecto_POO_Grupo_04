@@ -5,14 +5,17 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.net.URL;
 import javax.swing.ImageIcon;
+import com.upch.rescateselva.recursos.Sprites;
 
 public abstract class Personaje {
     protected int x;
     protected int y;
     protected int vida;
     protected Image sprite;
+    protected BufferedImage[] cuadros;
 
     protected int ancho;
     protected int alto;
@@ -35,7 +38,16 @@ public abstract class Personaje {
         if (!mirandoDerecha) {
             g.scale(-1, 1);
         }
-        if (sprite != null) {
+        if (!esVisible()) {
+            g.setTransform(previa);
+            return;
+        }
+        if (cuadros != null) {
+            BufferedImage c = cuadros[Math.min(cuadroActual(), cuadros.length - 1)];
+            int w = c.getWidth() * Sprites.ESCALA;
+            int h = c.getHeight() * Sprites.ESCALA;
+            g.drawImage(c, -w / 2, alto - h, w, h, null);
+        } else if (sprite != null) {
             g.drawImage(sprite, -ancho / 2, 0, ancho, alto, null);
         } else {
             dibujarPlaceholder(g);
@@ -46,6 +58,18 @@ public abstract class Personaje {
     protected void dibujarPlaceholder(Graphics2D g) {
         g.setColor(Color.MAGENTA);
         g.fillRect(-ancho / 2, 0, ancho, alto);
+    }
+
+    protected void cargarCuadros(String nombre, int cantidad) {
+        cuadros = Sprites.cargarCuadros(nombre, cantidad);
+    }
+
+    protected int cuadroActual() {
+        return 0;
+    }
+
+    protected boolean esVisible() {
+        return true;
     }
 
     protected void cargarSprite(String nombre) {

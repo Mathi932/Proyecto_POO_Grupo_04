@@ -1,12 +1,12 @@
 package com.upch.rescateselva.ui;
 
 import com.upch.rescateselva.patrones.observer.Observador;
-import java.awt.BasicStroke;
+import com.upch.rescateselva.recursos.Fuente;
+import com.upch.rescateselva.recursos.Sprites;
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
 // PATRÓN OBSERVER: observador concreto
@@ -25,6 +25,9 @@ public class HUD extends JPanel implements Observador {
     private int mensajeFrames;
     private int bannerFrames;
     private int tick;
+
+    private static final Color CLARO = new Color(0xf4ead0);
+    private static final Color AMARILLO = new Color(0xffd96b);
 
     public HUD() {
         setOpaque(false);
@@ -81,94 +84,67 @@ public class HUD extends JPanel implements Observador {
     }
 
     public void dibujar(Graphics2D g, int w, int h) {
-        g.setColor(new Color(0, 0, 0, 120));
-        g.fillRoundRect(12, 12, 230, 84, 14, 14);
-        g.setFont(new Font("SansSerif", Font.BOLD, 16));
-        g.setColor(Color.WHITE);
-        g.drawString(String.format("Tiempo: %02d:%02d", tiempoTotal / 60, tiempoTotal % 60), 24, 34);
+        Fuente.nitido(g);
+        Pantallas.caja(g, 12, 12, 290, 100, false);
+        Fuente.texto(g, String.format("TIEMPO %02d:%02d", tiempoTotal / 60, tiempoTotal % 60), 28, 44, 16, CLARO);
 
-        int bw = 150;
-        g.setColor(new Color(60, 20, 20));
-        g.fillRoundRect(24, 44, bw, 14, 8, 8);
+        int bx = 28;
+        int by = 56;
+        int bw = 170;
+        g.setColor(new Color(0x2a1414));
+        g.fillRect(bx - 2, by - 2, bw + 4, 20);
         Color colorVida = vida > 50 ? new Color(0x4ec27a) : (vida > 25 ? new Color(0xe5b93c) : new Color(0xe5513c));
         g.setColor(colorVida);
-        g.fillRoundRect(24, 44, (int) (bw * Math.max(0, vida) / 100.0), 14, 8, 8);
-        g.setColor(Color.WHITE);
-        g.drawRoundRect(24, 44, bw, 14, 8, 8);
-        g.setFont(new Font("SansSerif", Font.BOLD, 11));
-        g.drawString(String.valueOf(Math.max(0, vida)), 24 + bw + 8, 56);
+        g.fillRect(bx, by, (int) (bw * Math.max(0, vida) / 100.0), 16);
+        Fuente.texto(g, String.valueOf(Math.max(0, vida)), bx + bw + 12, by + 15, 16, CLARO);
 
+        BufferedImage lleno = Sprites.cargar("corazon.png");
+        BufferedImage vacio = Sprites.cargar("corazon_vacio.png");
         for (int i = 0; i < 3; i++) {
-            dibujarCorazon(g, 26 + i * 22, 66, i < intentos);
+            BufferedImage c = i < intentos ? lleno : vacio;
+            if (c != null) {
+                Sprites.dibujar(g, c, 28 + i * 28, 82);
+            }
         }
-        g.setColor(new Color(0xb8b8b0));
-        g.fillOval(106, 70, 14, 12);
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        g.drawString("x" + piedras + "  [F]", 124, 81);
+        BufferedImage roca = Sprites.cargar("piedra.png");
+        if (roca != null) {
+            Sprites.dibujar(g, roca, 130, 86);
+        }
+        Fuente.texto(g, "x" + piedras + " [F]", 158, 98, 16, CLARO);
 
-        g.setFont(new Font("SansSerif", Font.BOLD, 17));
-        FontMetrics fm = g.getFontMetrics();
-        int tw = fm.stringWidth(titulo);
-        g.setColor(new Color(0, 0, 0, 120));
-        g.fillRoundRect(w / 2 - tw / 2 - 14, 12, tw + 28, 30, 14, 14);
-        g.setColor(Color.WHITE);
-        g.drawString(titulo, w / 2 - tw / 2, 33);
-
-        g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        fm = g.getFontMetrics();
         String linea = "Objetivo: " + objetivo;
-        int ow = fm.stringWidth(linea);
-
-        int filaY = (w / 2 + tw / 2 + 14 > w - ow - 44) ? 50 : 12;
-        g.setColor(new Color(0, 0, 0, 120));
-        g.fillRoundRect(w - ow - 38, filaY, ow + 26, 30, 14, 14);
-        g.setColor(new Color(0xffe27a));
-        g.drawString(linea, w - ow - 25, filaY + 21);
+        int ow = Fuente.ancho(g, linea, 16) + 32;
+        Pantallas.caja(g, w - ow - 12, 12, ow, 40, false);
+        Fuente.texto(g, linea, w - ow + 4, 40, 16, AMARILLO);
 
         if (agotado) {
             if ((tick / 20) % 2 == 0) {
-                textoCentrado(g, "¡AGOTADO!", w / 2, 72, 26, new Color(0xff6a5a));
+                Fuente.centrado(g, "¡AGOTADO!", w / 2 + 10, 100, 32, new Color(0xff6a5a));
             }
         } else if (segundos >= 0) {
             Color c = segundos <= 10 ? new Color(0xff6a5a) : Color.WHITE;
-            textoCentrado(g, String.format("HUIDA %02d:%02d", segundos / 60, segundos % 60), w / 2, 72, 24, c);
+            Fuente.centrado(g, String.format("HUIDA %02d:%02d", segundos / 60, segundos % 60), w / 2 + 10, 100, 32, c);
         }
 
         if (bannerFrames > 0) {
             int alfa = Math.min(255, bannerFrames * 4);
-            g.setColor(new Color(0, 0, 0, Math.min(150, alfa)));
-            g.fillRect(0, h / 2 - 70, w, 90);
-            textoCentrado(g, titulo, w / 2, h / 2 - 12, 34, new Color(255, 255, 255, alfa));
-            textoCentrado(g, objetivo, w / 2, h / 2 + 14, 18, new Color(255, 226, 122, alfa));
+            g.setColor(new Color(0, 0, 0, Math.min(170, alfa)));
+            g.fillRect(0, h / 2 - 90, w, 130);
+            Fuente.centrado(g, titulo, w / 2, h / 2 - 30, 24, new Color(244, 234, 208, alfa));
+            Fuente.centrado(g, objetivo, w / 2, h / 2 + 10, 16, new Color(255, 217, 107, alfa));
         }
 
         if (mensajeFrames > 0 && mensaje != null) {
-            g.setFont(new Font("SansSerif", Font.BOLD, 18));
-            fm = g.getFontMetrics();
-            int mw = fm.stringWidth(mensaje);
-            int alfa = Math.min(255, mensajeFrames * 6);
-            g.setColor(new Color(0, 0, 0, Math.min(170, alfa)));
-            g.fillRoundRect(w / 2 - mw / 2 - 16, h - 100, mw + 32, 38, 16, 16);
-            g.setColor(new Color(255, 255, 255, alfa));
-            g.drawString(mensaje, w / 2 - mw / 2, h - 75);
+            java.util.List<String> lineas = Fuente.lineas(g, mensaje, 780, 16);
+            int alto = 28 + lineas.size() * 28;
+            int ancho = 0;
+            for (String l : lineas) {
+                ancho = Math.max(ancho, Fuente.ancho(g, l, 16));
+            }
+            Pantallas.caja(g, w / 2 - ancho / 2 - 24, 126, ancho + 48, alto, true);
+            for (int i = 0; i < lineas.size(); i++) {
+                Fuente.centrado(g, lineas.get(i), w / 2, 126 + 36 + i * 28, 16, CLARO);
+            }
         }
-    }
-
-    private void dibujarCorazon(Graphics2D g, int x, int y, boolean lleno) {
-        g.setColor(lleno ? new Color(0xe5384f) : new Color(90, 90, 90));
-        g.fillOval(x, y, 10, 10);
-        g.fillOval(x + 8, y, 10, 10);
-        g.fillPolygon(new int[] {x, x + 18, x + 9}, new int[] {y + 6, y + 6, y + 18}, 3);
-    }
-
-    private void textoCentrado(Graphics2D g, String texto, int cx, int baseY, int tamano, Color color) {
-        g.setFont(new Font("SansSerif", Font.BOLD, tamano));
-        FontMetrics fm = g.getFontMetrics();
-        g.setColor(new Color(0, 0, 0, Math.min(200, color.getAlpha())));
-        g.drawString(texto, cx - fm.stringWidth(texto) / 2 + 2, baseY + 2);
-        g.setColor(color);
-        g.drawString(texto, cx - fm.stringWidth(texto) / 2, baseY);
-        g.setStroke(new BasicStroke(1f));
     }
 }

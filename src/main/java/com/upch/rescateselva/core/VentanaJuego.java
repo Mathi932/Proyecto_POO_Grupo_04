@@ -9,10 +9,17 @@ public class VentanaJuego extends JFrame {
     private final GamePanel panel;
 
     public VentanaJuego() {
+        this(0, 0);
+    }
+
+    public VentanaJuego(int nivelInicial, int xInicial) {
         super("Rescate en la Selva");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
         panel = new GamePanel();
+        if (nivelInicial >= 1) {
+            panel.iniciarEnNivel(nivelInicial, xInicial);
+        }
         add(panel);
         pack();
         setLocationRelativeTo(null);

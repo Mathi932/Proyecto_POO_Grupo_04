@@ -1,8 +1,11 @@
 package com.upch.rescateselva.modelo.obstaculos;
 
 import com.upch.rescateselva.modelo.personajes.Jugador;
+import com.upch.rescateselva.recursos.Sprites;
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 public class Rio extends Obstaculo {
     private final int velocidadCorriente;
@@ -41,6 +44,14 @@ public class Rio extends Obstaculo {
 
     @Override
     public void dibujar(Graphics2D g) {
+        BufferedImage superficie = Sprites.cargar((tick / 20) % 2 == 0 ? "agua0.png" : "agua1.png");
+        if (superficie != null) {
+            java.awt.Composite previo = g.getComposite();
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.72f));
+            Sprites.mosaico(g, superficie, x, y, ancho, alto);
+            g.setComposite(previo);
+            return;
+        }
         g.setColor(new Color(110, 96, 50, 170));
         g.fillRect(x, y, ancho, alto);
 

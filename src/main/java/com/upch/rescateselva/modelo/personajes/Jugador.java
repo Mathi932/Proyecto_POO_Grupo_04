@@ -45,7 +45,7 @@ public class Jugador extends Personaje {
         this.prevY = y;
         this.seguroX = x;
         this.seguroY = y;
-        cargarSprite("amaru.png");
+        cargarCuadros("amaru.png", 5);
         actualizarStats();
     }
 
@@ -152,7 +152,7 @@ public class Jugador extends Personaje {
             return;
         }
         super.recibirDanio(cantidad);
-        invulnerable = 70;
+        invulnerable = 100;
         actualizarStats();
     }
 
@@ -270,6 +270,22 @@ public class Jugador extends Personaje {
     }
 
 
+
+    @Override
+    protected boolean esVisible() {
+        return !(invulnerable > 0 && (invulnerable / 4) % 2 == 0);
+    }
+
+    @Override
+    protected int cuadroActual() {
+        if (agotado) {
+            return 4;
+        }
+        if (!enSuelo) {
+            return 3;
+        }
+        return caminando ? 1 + (tick / 6) % 2 : 0;
+    }
 
     @Override
     protected void dibujarPlaceholder(Graphics2D g) {

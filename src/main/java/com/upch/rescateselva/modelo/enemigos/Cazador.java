@@ -7,7 +7,7 @@ import java.awt.Graphics2D;
 
 public class Cazador extends Enemigo {
     private static final int VEL_PATRULLA = 1;
-    private static final int VEL_PERSECUCION = 3;
+    private static final int VEL_PERSECUCION = 2;
 
     private int patrullaMin;
     private int patrullaMax;
@@ -18,8 +18,8 @@ public class Cazador extends Enemigo {
     private int cooldownPiedra = 90;
 
     public Cazador() {
-        super(30, 48, 40, 30, 380);
-        cargarSprite("cazador.png");
+        super(30, 48, 40, 15, 300);
+        cargarCuadros("cazador.png", 3);
     }
 
 
@@ -73,7 +73,7 @@ public class Cazador extends Enemigo {
             cooldownPiedra--;
             if (cooldownPiedra <= 0) {
                 lanzarPiedra();
-                cooldownPiedra = modoPersecucion ? 100 : 140;
+                cooldownPiedra = modoPersecucion ? 160 : 200;
             }
         }
     }
@@ -120,6 +120,12 @@ public class Cazador extends Enemigo {
         if (vida <= 0) {
             activo = false;
         }
+    }
+
+    @Override
+    protected int cuadroActual() {
+        boolean camina = (modoPersecucion || (patrullaMax > patrullaMin)) && aturdido == 0;
+        return camina ? 1 + (tick / 8) % 2 : 0;
     }
 
     @Override

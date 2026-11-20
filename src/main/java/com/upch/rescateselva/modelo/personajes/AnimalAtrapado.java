@@ -3,7 +3,6 @@ package com.upch.rescateselva.modelo.personajes;
 import com.upch.rescateselva.modelo.enemigos.Enemigo;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
 
 public abstract class AnimalAtrapado extends Personaje {
@@ -113,7 +112,6 @@ public abstract class AnimalAtrapado extends Personaje {
         super.dibujar(g);
         if (!liberado) {
             dibujarJaula(g);
-            dibujarProgreso(g);
         } else if (flashAtaque > 0 && objetivoCombate != null) {
             g.setColor(new Color(255, 230, 120, 40 + flashAtaque * 8));
             g.setStroke(new BasicStroke(3f));
@@ -139,26 +137,12 @@ public abstract class AnimalAtrapado extends Personaje {
         }
     }
 
-    protected void dibujarProgreso(Graphics2D g) {
-        int cx = x + ancho / 2;
-        int base = y + alto;
-        if (progreso > 0) {
-            int w = 64;
-            int bx = cx - w / 2;
-            int by = base - 92;
-            g.setColor(new Color(0, 0, 0, 150));
-            g.fillRoundRect(bx - 2, by - 2, w + 4, 12, 6, 6);
-            g.setColor(new Color(0x74d1a0));
-            g.fillRoundRect(bx, by, (int) (w * (progreso / (double) requerido)), 8, 4, 4);
-        } else if (seguirA != null && cercaDe(seguirA)) {
-            g.setFont(new Font("SansSerif", Font.BOLD, 13));
-            String txt = "Mantén [E] para " + tipoTrampa;
-            int tw = g.getFontMetrics().stringWidth(txt);
-            g.setColor(new Color(0, 0, 0, 160));
-            g.fillRoundRect(cx - tw / 2 - 6, base - 108, tw + 12, 20, 8, 8);
-            g.setColor(Color.WHITE);
-            g.drawString(txt, cx - tw / 2, base - 93);
-        }
+    public double getFraccionProgreso() {
+        return progreso / (double) requerido;
+    }
+
+    public boolean pideAccion() {
+        return !liberado && progreso == 0 && seguirA != null && cercaDe(seguirA);
     }
 
     private boolean cercaDe(Jugador j) {
@@ -187,5 +171,10 @@ public abstract class AnimalAtrapado extends Personaje {
 
     public void setObjetivoCombate(Enemigo e) {
         this.objetivoCombate = e;
+    }
+
+    @Override
+    protected int cuadroActual() {
+        return isLiberado() && cuadros != null ? (tick / 8) % cuadros.length : 0;
     }
 }

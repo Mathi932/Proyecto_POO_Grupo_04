@@ -9,7 +9,7 @@ public class Tucan extends AnimalAtrapado {
         super(x, y, 34, 30, "Tucán", "cortar la red", 45);
         this.vuela = true;
         this.distanciaSeguimiento = 45;
-        cargarSprite("tucan.png");
+        cargarCuadros("tucan.png", 2);
     }
 
     @Override

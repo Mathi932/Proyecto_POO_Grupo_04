@@ -6,17 +6,17 @@ import com.upch.rescateselva.modelo.personajes.AnimalAtrapado;
 import com.upch.rescateselva.modelo.personajes.Jugador;
 import com.upch.rescateselva.niveles.DisenoNiveles;
 import com.upch.rescateselva.niveles.Nivel;
+import com.upch.rescateselva.recursos.Fuente;
+import com.upch.rescateselva.recursos.Musica;
 import com.upch.rescateselva.ui.HUD;
-import java.awt.BasicStroke;
+import com.upch.rescateselva.ui.Pantallas;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,17 +34,15 @@ public class GamePanel extends JPanel implements Runnable {
 
     private static final String[] OPCIONES_MENU = {"JUGAR", "CONTROLES", "SALIR"};
     private static final String[] HISTORIA = {
-        "Amaru, guardaparques de la Amazonía peruana, recorre la reserva cuando encuentra "
-            + "jaulas, trampas y huellas de botas por todas partes.",
-        "Son Los Extractores, una banda de tráfico de fauna. Han atrapado a los animales "
-            + "del bosque y planean llevárselos antes del amanecer.",
-        "Libera al Tucán, al Mono Bebé y al Jaguar Cachorro. Cada rescate despierta a los "
-            + "cazadores... y al final, su líder te espera en el campamento: una gran serpiente."
+        "Amaru, guardaparques de la Amazonía peruana, encuentra jaulas, trampas y huellas de botas en la reserva.",
+        "Son Los Extractores, una banda de tráfico de fauna. Quieren llevarse a los animales antes del amanecer.",
+        "Libera al Tucán, al Mono Bebé y al Jaguar Cachorro. Al final te espera el líder: una gran serpiente."
     };
 
     private Thread hiloJuego;
     private volatile boolean corriendo;
     private final Object lock = new Object();
+    private final BufferedImage bufferMundo = new BufferedImage(ANCHO / 2, ALTO / 2, BufferedImage.TYPE_INT_RGB);
 
     private final Entrada entrada = new Entrada();
     private final HUD hud = new HUD();
@@ -52,7 +50,6 @@ public class GamePanel extends JPanel implements Runnable {
     private Nivel nivelActual;
     private List<Nivel> niveles = new ArrayList<>();
     private int indiceNivel;
-    private boolean pausado;
 
     private Pantalla pantalla = Pantalla.MENU;
     private int opcionMenu;
@@ -121,6 +118,7 @@ public class GamePanel extends JPanel implements Runnable {
     private void actualizar() {
         synchronized (lock) {
             ticks++;
+            ajustarMusica();
             switch (pantalla) {
                 case MENU:
                     actualizarMenu();
@@ -143,10 +141,8 @@ public class GamePanel extends JPanel implements Runnable {
                     break;
                 case PAUSA:
                     if (entrada.consumir(KeyEvent.VK_P) || entrada.consumir(KeyEvent.VK_ESCAPE)) {
-                        pausado = false;
                         pantalla = Pantalla.JUGANDO;
                     } else if (entrada.consumir(KeyEvent.VK_M)) {
-                        pausado = false;
                         pantalla = Pantalla.MENU;
                     }
                     break;
@@ -168,6 +164,44 @@ public class GamePanel extends JPanel implements Runnable {
                 default:
                     break;
             }
+            Musica.reproducir(pistaActual());
+        }
+    }
+
+    private void ajustarMusica() {
+        boolean cambio = false;
+        if (entrada.consumir(KeyEvent.VK_N)) {
+            Musica.alternarSilencio();
+            cambio = true;
+        }
+        if (entrada.consumir(KeyEvent.VK_MINUS) || entrada.consumir(KeyEvent.VK_SUBTRACT)) {
+            Musica.bajarVolumen();
+            cambio = true;
+        }
+        if (entrada.consumir(KeyEvent.VK_PLUS) || entrada.consumir(KeyEvent.VK_ADD)
+                || entrada.consumir(KeyEvent.VK_EQUALS)) {
+            Musica.subirVolumen();
+            cambio = true;
+        }
+        if (cambio && pantalla == Pantalla.JUGANDO) {
+            hud.mostrarMensaje(Musica.descripcion(), 90);
+        }
+    }
+
+    private Musica.Pista pistaActual() {
+        switch (pantalla) {
+            case JUGANDO:
+            case PAUSA:
+            case NIVEL_COMPLETO:
+                if (nivelActual == null) {
+                    return Musica.Pista.PRINCIPAL;
+                }
+                if (nivelActual.estaEnCampamento()) {
+                    return Musica.Pista.JEFE;
+                }
+                return Musica.Pista.values()[1 + Math.min(2, indiceNivel)];
+            default:
+                return Musica.Pista.PRINCIPAL;
         }
     }
 
@@ -196,7 +230,6 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void actualizarJuego() {
         if (entrada.consumir(KeyEvent.VK_P) || entrada.consumir(KeyEvent.VK_ESCAPE)) {
-            pausado = true;
             pantalla = Pantalla.PAUSA;
             return;
         }
@@ -243,6 +276,21 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
 
+
+    public void iniciarEnNivel(int numero, int x) {
+        synchronized (lock) {
+            comenzarPartida();
+            int indice = Math.max(0, Math.min(2, numero - 1));
+            if (indice >= 1) {
+                aliadosTipos.add("tucan");
+            }
+            if (indice >= 2) {
+                aliadosTipos.add("mono");
+            }
+            cargarNivel(indice, false);
+            jugador.teletransportar(x, Nivel.SUELO_Y - jugador.getAlto());
+        }
+    }
 
     private void comenzarPartida() {
         jugador = new Jugador(100, Nivel.SUELO_Y - 44);
@@ -320,35 +368,40 @@ public class GamePanel extends JPanel implements Runnable {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        Fuente.nitido(g2);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         synchronized (lock) {
             switch (pantalla) {
                 case MENU:
-                    dibujarMenu(g2);
+                    fondoMenu.dibujarFondo(g2, ticks / 2);
+                    Pantallas.menu(g2, opcionMenu, OPCIONES_MENU);
                     break;
                 case CONTROLES:
-                    dibujarControles(g2);
+                    fondoMenu.dibujarFondo(g2, ticks / 2);
+                    Pantallas.controles(g2);
                     break;
                 case HISTORIA:
-                    dibujarHistoria(g2);
+                    fondoMenu.dibujarFondo(g2, ticks / 3);
+                    Pantallas.historia(g2, HISTORIA[Math.min(paginaHistoria, HISTORIA.length - 1)],
+                            paginaHistoria, HISTORIA.length);
                     break;
                 case JUGANDO:
                     dibujarJuego(g2);
                     break;
                 case PAUSA:
                     dibujarJuego(g2);
-                    velo(g2, "PAUSA", "[P] continuar     [M] menú principal");
+                    Pantallas.pausa(g2, Musica.descripcion());
                     break;
                 case NIVEL_COMPLETO:
                     dibujarJuego(g2);
-                    dibujarNivelCompleto(g2);
+                    Pantallas.nivelCompleto(g2, nivelActual.getNumero() >= 3, lineasNivelCompleto,
+                            formatoTiempo(jugador.getSegundosJugados()));
                     break;
                 case GAME_OVER:
-                    dibujarFinal(g2, false);
+                    Pantallas.finPartida(g2, false, formatoTiempo(segundosTotales()));
                     break;
                 case VICTORIA:
-                    dibujarFinal(g2, true);
+                    Pantallas.finPartida(g2, true, formatoTiempo(segundosTotales()));
                     break;
                 default:
                     break;
@@ -367,13 +420,17 @@ public class GamePanel extends JPanel implements Runnable {
         if (nivelActual == null || jugador == null) {
             return;
         }
-        int cam = calcularCamara();
-        nivelActual.dibujarFondo(g, cam);
-        g.translate(-cam, 0);
-        nivelActual.dibujarMundo(g);
-        jugador.dibujar(g);
-        nivelActual.dibujarFrente(g);
-        g.translate(cam, 0);
+        int cam = (calcularCamara() / 2) * 2;
+        Graphics2D b = bufferMundo.createGraphics();
+        b.scale(0.5, 0.5);
+        nivelActual.dibujarFondo(b, cam);
+        b.translate(-cam, 0);
+        nivelActual.dibujarMundo(b);
+        jugador.dibujar(b);
+        nivelActual.dibujarFrente(b);
+        b.dispose();
+        g.drawImage(bufferMundo, 0, 0, ANCHO, ALTO, null);
+        nivelActual.dibujarIndicadores(g, cam);
 
         hud.dibujar(g, ANCHO, ALTO);
         dibujarBarraJefe(g);
@@ -384,140 +441,22 @@ public class GamePanel extends JPanel implements Runnable {
         if (jefe == null || !nivelActual.estaEnCampamento()) {
             return;
         }
-        int w = 440;
+        int w = 460;
         int x = ANCHO / 2 - w / 2;
-        int y = ALTO - 46;
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRoundRect(x - 10, y - 24, w + 20, 46, 14, 14);
-        g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        g.setColor(new Color(0xffd27a));
-        g.drawString("LA SERPIENTE", x, y - 8);
-        g.setColor(new Color(70, 20, 30));
-        g.fillRoundRect(x, y, w, 14, 8, 8);
+        int y0 = ALTO - 76;
+        Pantallas.caja(g, x - 16, y0, w + 32, 68, false);
+        Fuente.texto(g, "LA SERPIENTE", x, y0 + 28, 16, new Color(0xffd96b));
+        g.setColor(new Color(0x2a1418));
+        g.fillRect(x, y0 + 38, w, 18);
         g.setColor(new Color(0xc73a5a));
-        g.fillRoundRect(x, y, (int) (w * Math.max(0, jefe.getVida()) / (double) jefe.getVidaMaxima()), 14, 8, 8);
-        g.setColor(Color.WHITE);
-        g.drawRoundRect(x, y, w, 14, 8, 8);
+        g.fillRect(x, y0 + 38, (int) (w * Math.max(0, jefe.getVida()) / (double) jefe.getVidaMaxima()), 18);
     }
 
-    private void dibujarMenu(Graphics2D g) {
-        fondoMenu.dibujarFondo(g, ticks / 2);
-        g.setColor(new Color(0, 0, 0, 110));
-        g.fillRect(0, 0, ANCHO, ALTO);
-        texto(g, "RESCATE EN LA SELVA", ANCHO / 2, 150, 54, new Color(0xffe9a8));
-        texto(g, "Un juego de rescate y escape", ANCHO / 2, 190, 20, new Color(0xdfeede));
-        for (int i = 0; i < OPCIONES_MENU.length; i++) {
-            boolean sel = i == opcionMenu;
-            texto(g, (sel ? "▶  " : "") + OPCIONES_MENU[i], ANCHO / 2, 280 + i * 52, sel ? 32 : 26,
-                    sel ? Color.WHITE : new Color(0xb9cdb9));
-        }
-        texto(g, "↑ ↓ para elegir · Enter para aceptar", ANCHO / 2, ALTO - 30, 15, new Color(0xcfdccf));
-    }
-
-    private void dibujarControles(Graphics2D g) {
-        fondoMenu.dibujarFondo(g, ticks / 2);
-        g.setColor(new Color(0, 0, 0, 160));
-        g.fillRect(0, 0, ANCHO, ALTO);
-        texto(g, "CONTROLES", ANCHO / 2, 100, 40, new Color(0xffe9a8));
-        String[][] filas = {
-            {"← →  /  A D", "Moverse"},
-            {"↑  /  W  /  Espacio", "Saltar"},
-            {"E (mantener)", "Liberar al animal atrapado"},
-            {"F", "Lanzar una piedra"},
-            {"P  /  Esc", "Pausa"}
-        };
-        for (int i = 0; i < filas.length; i++) {
-            g.setFont(new Font("SansSerif", Font.BOLD, 22));
-            g.setColor(new Color(0xffe27a));
-            g.drawString(filas[i][0], 220, 190 + i * 50);
-            g.setColor(Color.WHITE);
-            g.drawString(filas[i][1], 520, 190 + i * 50);
-        }
-        texto(g, "Las piedras se recogen solas al pasar encima.", ANCHO / 2, 450, 17, new Color(0xcfdccf));
-        texto(g, "Enter para volver", ANCHO / 2, ALTO - 30, 16, new Color(0xcfdccf));
-    }
-
-    private void dibujarHistoria(Graphics2D g) {
-        fondoMenu.dibujarFondo(g, ticks / 3);
-        g.setColor(new Color(0, 0, 0, 170));
-        g.fillRect(0, 0, ANCHO, ALTO);
-        g.setFont(new Font("Serif", Font.PLAIN, 26));
-        g.setColor(Color.WHITE);
-        parrafo(g, HISTORIA[Math.min(paginaHistoria, HISTORIA.length - 1)], 120, 190, ANCHO - 240, 40);
-        texto(g, "Enter para continuar  (" + (paginaHistoria + 1) + "/" + HISTORIA.length + ")",
-                ANCHO / 2, ALTO - 40, 16, new Color(0xcfdccf));
-    }
-
-    private void dibujarNivelCompleto(Graphics2D g) {
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(0, ALTO / 2 - 100, ANCHO, 200);
-        boolean ultimo = nivelActual.getNumero() >= 3;
-        texto(g, ultimo ? "¡LA SERPIENTE HUYE!" : "¡NIVEL COMPLETADO!", ANCHO / 2, ALTO / 2 - 40, 42, new Color(0xffe9a8));
-        int y = ALTO / 2 + 5;
-        for (String linea : lineasNivelCompleto) {
-            texto(g, linea, ANCHO / 2, y, 20, Color.WHITE);
-            y += 28;
-        }
-        texto(g, "Tiempo: " + formatoTiempo(jugador.getSegundosJugados()), ANCHO / 2, y + 6, 22, new Color(0xb9f0cc));
-    }
-
-    private void dibujarFinal(Graphics2D g, boolean victoria) {
-        Color arriba = victoria ? new Color(0x2a6b4a) : new Color(0x2b1a1a);
-        Color abajo = victoria ? new Color(0xe8d48a) : new Color(0x6a2a2a);
-        g.setPaint(new GradientPaint(0, 0, arriba, 0, ALTO, abajo));
-        g.fillRect(0, 0, ANCHO, ALTO);
-        if (victoria) {
-            texto(g, "¡VICTORIA!", ANCHO / 2, 150, 60, Color.WHITE);
-            g.setFont(new Font("Serif", Font.PLAIN, 24));
-            g.setColor(Color.WHITE);
-            parrafo(g, "La Serpiente huye asustada y Los Extractores pierden su guarida. "
-                    + "Tucán, Mono Bebé y Jaguar Cachorro vuelven a casa gracias a Amaru.", 140, 220, ANCHO - 280, 36);
-        } else {
-            texto(g, "GAME OVER", ANCHO / 2, 170, 60, new Color(0xffd0c0));
-            texto(g, "Los animales siguen necesitando ayuda...", ANCHO / 2, 230, 24, Color.WHITE);
-        }
-        int segundos = jugador == null ? 0 : jugador.getSegundosJugados();
-        texto(g, "Tiempo total: " + formatoTiempo(segundos), ANCHO / 2, 380, 30, new Color(0xfff2b0));
-        texto(g, "Enter para volver al menú", ANCHO / 2, ALTO - 40, 18, new Color(0xf3f3f3));
+    private int segundosTotales() {
+        return jugador == null ? 0 : jugador.getSegundosJugados();
     }
 
     private static String formatoTiempo(int segundos) {
         return String.format("%02d:%02d", segundos / 60, segundos % 60);
-    }
-
-    private void velo(Graphics2D g, String titulo, String subtitulo) {
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(0, 0, ANCHO, ALTO);
-        texto(g, titulo, ANCHO / 2, ALTO / 2 - 10, 56, Color.WHITE);
-        texto(g, subtitulo, ANCHO / 2, ALTO / 2 + 36, 20, new Color(0xdfeede));
-    }
-
-
-    private void texto(Graphics2D g, String s, int cx, int baseY, int tamano, Color color) {
-        g.setFont(new Font("SansSerif", Font.BOLD, tamano));
-        FontMetrics fm = g.getFontMetrics();
-        int x = cx - fm.stringWidth(s) / 2;
-        g.setColor(new Color(0, 0, 0, 170));
-        g.drawString(s, x + 2, baseY + 2);
-        g.setColor(color);
-        g.drawString(s, x, baseY);
-        g.setStroke(new BasicStroke(1f));
-    }
-
-    private void parrafo(Graphics2D g, String texto, int x, int y, int ancho, int interlineado) {
-        FontMetrics fm = g.getFontMetrics();
-        StringBuilder linea = new StringBuilder();
-        int yy = y;
-        for (String palabra : texto.split(" ")) {
-            String prueba = linea.length() == 0 ? palabra : linea + " " + palabra;
-            if (fm.stringWidth(prueba) > ancho) {
-                g.drawString(linea.toString(), x, yy);
-                yy += interlineado;
-                linea = new StringBuilder(palabra);
-            } else {
-                linea = new StringBuilder(prueba);
-            }
-        }
-        g.drawString(linea.toString(), x, yy);
     }
 }

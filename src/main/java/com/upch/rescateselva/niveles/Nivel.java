@@ -9,11 +9,14 @@ import com.upch.rescateselva.modelo.personajes.Jugador;
 import com.upch.rescateselva.niveles.estado.EstadoNivel;
 import com.upch.rescateselva.niveles.estado.Explorando;
 import com.upch.rescateselva.niveles.estado.Huyendo;
+import com.upch.rescateselva.recursos.Fuente;
+import com.upch.rescateselva.recursos.Sprites;
+import com.upch.rescateselva.ui.Pantallas;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,7 +39,7 @@ public class Nivel {
     private final List<Obstaculo> obstaculos = new ArrayList<>();
     private final List<Plataforma> plataformas = new ArrayList<>();
     private final List<Distractor> distractores = new ArrayList<>();
-    private final List<Integer> puntosDistractores = new ArrayList<>();
+    private final List<int[]> puntosDistractores = new ArrayList<>();
     private List<String> aliadosTipos = new ArrayList<>();
 
     private EstadoNivel estado; // STATE: contexto
@@ -81,7 +84,11 @@ public class Nivel {
     }
 
     public void agregarPuntoDistractor(int x) {
-        puntosDistractores.add(x);
+        puntosDistractores.add(new int[] {x, SUELO_Y});
+    }
+
+    public void agregarPuntoDistractor(int x, int yPies) {
+        puntosDistractores.add(new int[] {x, yPies});
     }
 
     public void limpiarContenido() {
@@ -284,13 +291,13 @@ public class Nivel {
         switch (numero) {
             case 1:
                 cronometroActivo = true;
-                cronometroFrames = 60 * 60;
+                cronometroFrames = 80 * 60;
                 soltarDistractores();
                 mensaje = "¡Regresa! Recoge piedras y lánzalas con [F]";
                 break;
             case 2:
                 cronometroActivo = true;
-                cronometroFrames = 35 * 60;
+                cronometroFrames = 50 * 60;
                 for (Enemigo e : enemigos) {
                     e.activarPersecucion();
                 }
@@ -304,8 +311,8 @@ public class Nivel {
     }
 
     public void soltarDistractores() {
-        for (int x : puntosDistractores) {
-            distractores.add(Distractor.enElSuelo(x, SUELO_Y));
+        for (int[] punto : puntosDistractores) {
+            distractores.add(Distractor.enElSuelo(punto[0], punto[1]));
         }
     }
 
@@ -429,57 +436,26 @@ public class Nivel {
 
 
     public void dibujarFondo(Graphics2D g, int camX) {
-        Color[] c = paleta();
-        g.setPaint(new GradientPaint(0, 0, c[0], 0, ALTO_PANTALLA, c[1]));
-        g.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
-
-        g.setColor(c[5]);
-        g.fillOval(700, 50, 80, 80);
-        g.setColor(new Color(c[5].getRed(), c[5].getGreen(), c[5].getBlue(), 50));
-        g.fillOval(680, 30, 120, 120);
-
-        int lejos = (int) (camX * 0.12);
-        int ancho = 280;
-        for (int i = -1; i < ANCHO_PANTALLA / ancho + 3; i++) {
-            int idx = i + lejos / ancho;
-            int bx = i * ancho - (lejos % ancho);
-            int h = 150 + (Math.abs(idx * 37) % 60);
-            g.setColor(c[2]);
-            if (tema == 3 || tema == 4) {
-                int colH = 120 + (Math.abs(idx * 53) % 120);
-                g.fillRect(bx + 60, 460 - colH, 46, colH);
-                g.fillRect(bx + 50, 460 - colH - 8, 66, 10);
-                if (idx % 2 == 0) {
-                    g.fillRect(bx + 150, 460 - colH / 2, 40, colH / 2);
-                }
-            } else {
-                g.fillOval(bx - 40, 470 - h, ancho + 90, h * 2);
-            }
+        BufferedImage cielo = Sprites.cargar("fondo" + tema + "_cielo.png");
+        if (cielo == null) {
+            Color[] c = paleta();
+            g.setPaint(new GradientPaint(0, 0, c[0], 0, ALTO_PANTALLA, c[1]));
+            g.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
+            return;
         }
+        g.drawImage(cielo, 0, 0, ANCHO_PANTALLA, ALTO_PANTALLA, null);
+        capaParalaje(g, Sprites.cargar("fondo" + tema + "_lejos.png"), camX, 0.12);
+        capaParalaje(g, Sprites.cargar("fondo" + tema + "_medio.png"), camX, 0.35);
+    }
 
-        int medio = (int) (camX * 0.35);
-        int sep = 170;
-        for (int i = -1; i < ANCHO_PANTALLA / sep + 3; i++) {
-            int idx = i + medio / sep;
-            int bx = i * sep - (medio % sep) + (Math.abs(idx * 29) % 50);
-            int altoTronco = 110 + (Math.abs(idx * 41) % 70);
-            g.setColor(c[4]);
-            g.fillRect(bx, 470 - altoTronco, 14, altoTronco);
-            g.setColor(c[3]);
-            g.fillOval(bx - 38, 470 - altoTronco - 46, 90, 70);
-            g.fillOval(bx - 14, 470 - altoTronco - 70, 70, 60);
+    private void capaParalaje(Graphics2D g, BufferedImage capa, int camX, double factor) {
+        if (capa == null) {
+            return;
         }
-
-        if (tema == 2) {
-            g.setPaint(new GradientPaint(0, 300, new Color(255, 235, 190, 0), 0, 470, new Color(255, 235, 190, 110)));
-            g.fillRect(0, 300, ANCHO_PANTALLA, 200);
-        } else if (tema == 4) {
-            int fx = 480 - (int) (camX * 0.5) % 1400 + 700;
-            for (int k = -1; k <= 1; k++) {
-                int tx = ((fx + k * 1400) % 2800);
-                g.setColor(new Color(255, 140, 40, 40));
-                g.fillOval(tx - 120, 340, 240, 200);
-            }
+        int periodo = capa.getWidth() * Sprites.ESCALA;
+        int desplazo = ((int) (camX * factor) / Sprites.ESCALA) * Sprites.ESCALA % periodo;
+        for (int bx = -desplazo; bx < ANCHO_PANTALLA; bx += periodo) {
+            g.drawImage(capa, bx, 0, periodo, capa.getHeight() * Sprites.ESCALA, null);
         }
     }
 
@@ -512,27 +488,47 @@ public class Nivel {
         }
     }
 
+    public void dibujarIndicadores(Graphics2D g, int camX) {
+        for (AnimalAtrapado a : animales) {
+            if (a.isLiberado()) {
+                continue;
+            }
+            int cx = a.getX() + a.getAncho() / 2 - camX;
+            int arriba = a.getY() + a.getAlto() - 74 - 56;
+            if (a.getFraccionProgreso() > 0) {
+                int w = 130;
+                int bx = Math.max(24, Math.min(ANCHO_PANTALLA - 24 - w, cx - w / 2));
+                Pantallas.caja(g, bx - 10, arriba + 8, w + 20, 34, true);
+                g.setColor(new Color(0x2a1418));
+                g.fillRect(bx, arriba + 17, w, 16);
+                g.setColor(new Color(0x74d1a0));
+                g.fillRect(bx, arriba + 17, (int) (w * a.getFraccionProgreso()), 16);
+            } else if (a.pideAccion()) {
+                String txt = "Mantén [E] para " + a.getTipoTrampa();
+                int tw = Fuente.ancho(g, txt, 16);
+                int bx = Math.max(8 + tw / 2 + 16, Math.min(ANCHO_PANTALLA - 8 - tw / 2 - 16, cx));
+                Pantallas.caja(g, bx - tw / 2 - 16, arriba, tw + 32, 42, true);
+                Fuente.centrado(g, txt, bx, arriba + 28, 16, new Color(0xf4ead0));
+            }
+        }
+    }
+
     private void dibujarSalida(Graphics2D g) {
         if (campamento || salidaX < 0) {
             return;
         }
         boolean huyendo = estado.enHuida();
-        int px = salidaX;
-        g.setColor(new Color(0x5a3f24));
-        g.fillRect(px, SUELO_Y - 90, 8, 90);
-        Color bandera = huyendo ? new Color(0x2fb36b) : new Color(0x8a8a82);
-        g.setColor(bandera);
-        int ondula = (int) (3 * Math.sin(tick * 0.1));
-        g.fillRect(px + 8, SUELO_Y - 88, 54, 28 + ondula);
-        g.setColor(new Color(0, 0, 0, 120));
-        g.drawRect(px + 8, SUELO_Y - 88, 54, 28 + ondula);
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("SansSerif", Font.BOLD, 12));
-        g.drawString("SALIDA", px + 12, SUELO_Y - 69);
+        BufferedImage bandera = Sprites.cargar(huyendo ? "salida_verde.png" : "salida.png");
         if (huyendo) {
             int a = 90 + (int) (80 * Math.sin(tick * 0.15));
             g.setColor(new Color(120, 255, 170, Math.max(10, a)));
-            g.fillOval(px - 30, SUELO_Y - 120, 120, 120);
+            g.fillOval(salidaX - 40, SUELO_Y - 100, 120, 120);
+        }
+        if (bandera != null) {
+            Sprites.dibujar(g, bandera, salidaX, SUELO_Y - bandera.getHeight() * Sprites.ESCALA);
+        } else {
+            g.setColor(huyendo ? new Color(0x2fb36b) : new Color(0x8a8a82));
+            g.fillRect(salidaX, SUELO_Y - 90, 8, 90);
         }
     }
 

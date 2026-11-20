@@ -17,7 +17,7 @@ public class Serpiente extends Enemigo {
     private int flashDanio;
 
     public Serpiente() {
-        super(60, 36, 30, 15, 420);
+        super(60, 36, 30, 10, 340);
         cargarSprite("serpiente.png");
     }
 
@@ -26,7 +26,7 @@ public class Serpiente extends Enemigo {
         this.ancho = 130;
         this.alto = 70;
         this.vida = 100;
-        this.danio = 15;
+        this.danio = 10;
     }
 
     public void configurarPatrulla(int min, int max) {
@@ -85,7 +85,7 @@ public class Serpiente extends Enemigo {
             cooldownLanzar--;
             if (cooldownLanzar <= 0) {
                 lanzarObjeto();
-                cooldownLanzar = 140;
+                cooldownLanzar = 190;
             }
         }
     }

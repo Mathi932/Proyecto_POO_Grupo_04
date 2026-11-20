@@ -1,10 +1,12 @@
 package com.upch.rescateselva.modelo.obstaculos;
 
 import com.upch.rescateselva.modelo.personajes.Jugador;
+import com.upch.rescateselva.recursos.Sprites;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 public class Trampa extends Obstaculo {
     private final int danio = 20;
@@ -27,6 +29,12 @@ public class Trampa extends Obstaculo {
 
     @Override
     public void dibujar(Graphics2D g) {
+        BufferedImage img = Sprites.cargar("trampa.png");
+        if (img != null) {
+            g.drawImage(img, x, y + alto - img.getHeight() * Sprites.ESCALA,
+                    img.getWidth() * Sprites.ESCALA, img.getHeight() * Sprites.ESCALA, null);
+            return;
+        }
         int puntas = 4;
         int w = ancho / puntas;
         for (int i = 0; i < puntas; i++) {

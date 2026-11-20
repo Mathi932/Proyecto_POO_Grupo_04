@@ -1,10 +1,12 @@
 package com.upch.rescateselva.modelo.obstaculos;
 
 import com.upch.rescateselva.modelo.enemigos.Enemigo;
+import com.upch.rescateselva.recursos.Sprites;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.Random;
 
 public class Distractor {
@@ -100,6 +102,14 @@ public class Distractor {
         if (!enSuelo) {
             g.rotate(giro);
         }
+        BufferedImage img = Sprites.cargar(lanzadoPorJugador ? "piedra_lanzada.png" : "piedra.png");
+        if (img != null) {
+            g.drawImage(img, -img.getWidth() * Sprites.ESCALA / 2, -img.getHeight() * Sprites.ESCALA / 2,
+                    img.getWidth() * Sprites.ESCALA, img.getHeight() * Sprites.ESCALA, null);
+            g.setTransform(previa);
+            dibujarBrillo(g);
+            return;
+        }
         Color base = lanzadoPorJugador ? new Color(0x8d8d85) : new Color(0x7a5a3a);
         g.setColor(new Color(0, 0, 0, 60));
         g.fillOval(-ancho / 2 + 1, -alto / 2 + 2, ancho, alto);
@@ -110,6 +120,10 @@ public class Distractor {
         g.setColor(base.darker());
         g.drawOval(-ancho / 2, -alto / 2, ancho, alto);
         g.setTransform(previa);
+        dibujarBrillo(g);
+    }
+
+    private void dibujarBrillo(Graphics2D g) {
         if (enSuelo) {
             int alfa = 70 + (int) (50 * Math.sin(System.nanoTime() / 2.5e8));
             g.setColor(new Color(255, 240, 150, Math.max(20, alfa)));

@@ -2,7 +2,9 @@ package com.upch.rescateselva.niveles;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import com.upch.rescateselva.recursos.Sprites;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 public class Plataforma {
     public enum Tipo { FIRME, LECHO, TRONCO, FRAGIL }
@@ -16,7 +18,6 @@ public class Plataforma {
     private boolean activa = true;
     private boolean pisada;
     private int temporizador;
-    private int hundimiento;
     private int reaparicion;
 
     public Plataforma(int x, int y, int ancho, int alto, Tipo tipo) {
@@ -36,7 +37,6 @@ public class Plataforma {
                     } else if (temporizador > 0) {
                         temporizador--;
                     }
-                    hundimiento = Math.min(18, temporizador / 4);
                     if (temporizador >= 75) {
                         activa = false;
                         reaparicion = 200;
@@ -44,7 +44,6 @@ public class Plataforma {
                 } else if (--reaparicion <= 0) {
                     activa = true;
                     temporizador = 0;
-                    hundimiento = 0;
                 }
                 break;
             case FRAGIL:
@@ -88,7 +87,7 @@ public class Plataforma {
     }
 
     public int getTop() {
-        return y + hundimiento;
+        return y;
     }
 
     public int getAlto() {
@@ -106,54 +105,68 @@ public class Plataforma {
         int top = getTop();
         switch (tipo) {
             case FIRME:
-                g.setColor(new Color(0x5a3f24));
-                g.fillRect(x, top, ancho, alto);
-                g.setColor(new Color(0x47301a));
-                for (int i = x + 20; i < x + ancho; i += 70) {
-                    g.fillOval(i, top + 28 + (i % 3) * 14, 14, 8);
-                }
-                g.setColor(new Color(0x3f8f4a));
-                g.fillRect(x, top, ancho, 10);
-                g.setColor(new Color(0x62b564));
-                for (int i = x; i < x + ancho; i += 12) {
-                    g.fillRect(i, top - 3 + (i % 5 == 0 ? -2 : 0), 5, 4);
-                }
+                dibujarFirme(g, top);
                 break;
             case LECHO:
-                g.setColor(new Color(0x7d6b45));
-                g.fillRect(x, top, ancho, alto);
+                BufferedImage lecho = Sprites.cargar("lecho.png");
+                if (lecho != null) {
+                    Sprites.mosaico(g, lecho, x, top, ancho, alto);
+                } else {
+                    g.setColor(new Color(0x7d6b45));
+                    g.fillRect(x, top, ancho, alto);
+                }
                 break;
             case TRONCO:
-                g.setColor(new Color(0x6b4524));
-                g.fillRoundRect(x, top, ancho, alto, 16, 16);
-                g.setColor(new Color(0x8a5a30));
-                g.fillRoundRect(x + 4, top + 3, ancho - 8, 7, 8, 8);
-                g.setColor(new Color(0x3d2812));
-                g.drawRoundRect(x, top, ancho, alto, 16, 16);
-                g.setColor(new Color(0xc9a06a));
-                g.fillOval(x - 2, top + 2, 14, alto - 4);
-                g.fillOval(x + ancho - 12, top + 2, 14, alto - 4);
+                dibujarTronco(g, top);
                 break;
             case FRAGIL:
-                int temblor = temporizador > 0 ? (temporizador % 4 < 2 ? -1 : 1) : 0;
-                int px = x + temblor;
-                g.setColor(new Color(0x7b7b73));
-                g.fillRect(px, top, ancho, alto);
-                g.setColor(new Color(0x9a9a90));
-                g.fillRect(px, top, ancho, 6);
-                g.setColor(new Color(0x4d4d47));
-                g.drawRect(px, top, ancho, alto);
-                for (int i = px + 20; i < px + ancho; i += 22) {
-                    g.drawLine(i, top, i, top + alto);
-                }
-                if (temporizador > 8) {
-                    g.setColor(new Color(0x2c2c28));
-                    g.drawLine(px + ancho / 2 - 8, top, px + ancho / 2, top + alto);
-                    g.drawLine(px + ancho / 2, top + alto, px + ancho / 2 + 10, top + 4);
-                }
+                dibujarFragil(g, top);
                 break;
             default:
                 break;
         }
+    }
+
+    private void dibujarFirme(Graphics2D g, int top) {
+        BufferedImage hierba = Sprites.cargar("hierba.png");
+        BufferedImage tierra = Sprites.cargar("tierra.png");
+        if (hierba == null || tierra == null) {
+            g.setColor(new Color(0x5a3f24));
+            g.fillRect(x, top, ancho, alto);
+            g.setColor(new Color(0x3f8f4a));
+            g.fillRect(x, top, ancho, 10);
+            return;
+        }
+        int franja = hierba.getHeight() * Sprites.ESCALA;
+        Sprites.mosaico(g, hierba, x, top, ancho, Math.min(franja, alto));
+        if (alto > franja) {
+            Sprites.mosaico(g, tierra, x, top + franja, ancho, alto - franja);
+        }
+    }
+
+    private void dibujarTronco(Graphics2D g, int top) {
+        BufferedImage cuerpo = Sprites.cargar("tronco.png");
+        BufferedImage fin = Sprites.cargar("tronco_fin.png");
+        if (cuerpo == null || fin == null) {
+            g.setColor(new Color(0x6b4524));
+            g.fillRoundRect(x, top, ancho, alto, 16, 16);
+            return;
+        }
+        int px = x + (temporizador > 45 ? (temporizador % 4 < 2 ? -2 : 2) : 0);
+        Sprites.mosaico(g, cuerpo, px, top, ancho, alto);
+        Sprites.dibujar(g, fin, px - 4, top - 2);
+        g.drawImage(fin, px + ancho + 4, top - 2, px + ancho + 4 - fin.getWidth() * Sprites.ESCALA,
+                top - 2 + fin.getHeight() * Sprites.ESCALA, 0, 0, fin.getWidth(), fin.getHeight(), null);
+    }
+
+    private void dibujarFragil(Graphics2D g, int top) {
+        int temblor = temporizador > 0 ? (temporizador % 4 < 2 ? -2 : 2) : 0;
+        BufferedImage img = Sprites.cargar(temporizador > 8 ? "fragil_grieta.png" : "fragil.png");
+        if (img == null) {
+            g.setColor(new Color(0x7b7b73));
+            g.fillRect(x + temblor, top, ancho, alto);
+            return;
+        }
+        Sprites.mosaico(g, img, x + temblor, top, ancho, alto);
     }
 }

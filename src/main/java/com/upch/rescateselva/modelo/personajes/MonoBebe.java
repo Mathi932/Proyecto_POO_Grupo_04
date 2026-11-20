@@ -7,7 +7,7 @@ public class MonoBebe extends AnimalAtrapado {
     public MonoBebe(int x, int y) {
         super(x, y, 30, 34, "Mono Bebé", "abrir la jaula", 75);
         this.distanciaSeguimiento = 75;
-        cargarSprite("mono.png");
+        cargarCuadros("mono.png", 2);
     }
 
     @Override

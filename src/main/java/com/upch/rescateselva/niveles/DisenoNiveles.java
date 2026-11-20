@@ -12,124 +12,160 @@ import com.upch.rescateselva.modelo.personajes.MonoBebe;
 import com.upch.rescateselva.modelo.personajes.Tucan;
 import com.upch.rescateselva.niveles.Plataforma.Tipo;
 import com.upch.rescateselva.patrones.factory.FabricaEnemigos;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class DisenoNiveles {
     private static final FabricaEnemigos FABRICA = new FabricaEnemigos(); // FACTORY: el nivel es cliente
     private static final int S = Nivel.SUELO_Y;
+    private static final int FONDO_RIO = 520;
 
     private DisenoNiveles() {
     }
 
     public static Nivel construir(int numero, Jugador jugador, List<String> aliadosTipos) {
-        Nivel n;
-        switch (numero) {
-            case 1:
-                n = nivel1(jugador);
-                break;
-            case 2:
-                n = nivel2(jugador);
-                break;
-            default:
-                n = nivel3(jugador);
-                break;
-        }
+        Nivel n = leerNivel(Math.max(1, Math.min(3, numero)), jugador);
         n.setAliadosTipos(aliadosTipos);
         jugador.reiniciarParaNivel(100, S - jugador.getAlto());
         return n;
     }
 
-
-    private static Nivel nivel1(Jugador j) {
-        Nivel n = new Nivel(1, j, 3200, "Nivel 1 — El Claro");
-        n.setTema(1);
-        n.agregarPlataforma(new Plataforma(0, S, 3200, 100, Tipo.FIRME));
-
-        int[][] altas = {{420, 380, 120}, {640, 320, 120}, {1000, 370, 140}, {1500, 380, 120},
-            {1720, 320, 120}, {2100, 380, 140}, {2500, 360, 120}, {2760, 300, 100}};
-        for (int[] p : altas) {
-            n.agregarPlataforma(new Plataforma(p[0], p[1], p[2], 24, Tipo.FIRME));
+    private static List<String> leerLineas(int numero) {
+        String archivo = "nivel" + numero + ".txt";
+        List<String> lineas = new ArrayList<>();
+        try {
+            Path externo = Path.of("niveles", archivo);
+            if (!Files.exists(externo)) {
+                externo = Path.of("src", "main", "resources", "niveles", archivo);
+            }
+            if (Files.exists(externo)) {
+                lineas = Files.readAllLines(externo, StandardCharsets.UTF_8);
+            } else {
+                try (InputStream in = DisenoNiveles.class.getResourceAsStream("/niveles/" + archivo)) {
+                    if (in == null) {
+                        throw new IllegalStateException("No se encontró el archivo de nivel " + archivo);
+                    }
+                    lineas = List.of(new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\\R"));
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo leer " + archivo, e);
         }
-        int[] trampas = {520, 880, 1250, 1620, 2000, 2350, 2650};
-        for (int x : trampas) {
-            n.agregarObstaculo(new Trampa(x, S - 24));
-        }
-        n.agregarAnimal(new Tucan(2980, S - 30));
+        return lineas;
+    }
 
-        for (int x : new int[] {2700, 2050, 1400, 800}) {
-            n.agregarPuntoDistractor(x);
+    private static Nivel leerNivel(int numero, Jugador jugador) {
+        List<String[]> filas = new ArrayList<>();
+        String nombre = "Nivel " + numero;
+        int ancho = 4800;
+        int tema = numero;
+        for (String linea : leerLineas(numero)) {
+            int comentario = linea.indexOf('#');
+            String limpia = (comentario >= 0 ? linea.substring(0, comentario) : linea).trim();
+            if (limpia.isEmpty()) {
+                continue;
+            }
+            String[] p = limpia.split("\\s+", 2);
+            if (p[0].equals("nombre")) {
+                nombre = p[1];
+            } else if (p[0].equals("ancho")) {
+                ancho = Integer.parseInt(p[1].trim());
+            } else if (p[0].equals("tema")) {
+                tema = Integer.parseInt(p[1].trim());
+            } else {
+                filas.add(limpia.split("\\s+"));
+            }
+        }
+        Nivel n = new Nivel(numero, jugador, ancho, nombre);
+        n.setTema(tema);
+        for (String[] f : filas) {
+            try {
+                agregar(n, f);
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException("Nivel " + numero + ": línea incorrecta «" + String.join(" ", f) + "»", e);
+            }
         }
         return n;
     }
 
+    private static int num(String[] f, int i, int porDefecto) {
+        return f.length > i ? Integer.parseInt(f[i]) : porDefecto;
+    }
 
-    private static Nivel nivel2(Jugador j) {
-        Nivel n = new Nivel(2, j, 3700, "Nivel 2 — El Río Turbio");
-        n.setTema(2);
-        n.agregarPlataforma(new Plataforma(0, S, 700, 100, Tipo.FIRME));
-        n.agregarPlataforma(new Plataforma(700, 520, 1500, 40, Tipo.LECHO));
-        n.agregarPlataforma(new Plataforma(2200, S, 1500, 100, Tipo.FIRME));
-
-        int[][] troncos = {{760, 440}, {940, 420}, {1120, 400}, {1300, 420}, {1480, 440},
-            {1660, 410}, {1840, 430}, {2020, 440}};
-        for (int[] t : troncos) {
-            n.agregarPlataforma(new Plataforma(t[0], t[1], 110, 24, Tipo.TRONCO));
+    private static void agregar(Nivel n, String[] f) {
+        switch (f[0]) {
+            case "piso":
+                n.agregarPlataforma(new Plataforma(num(f, 1, 0), S, num(f, 2, 0), 100, Tipo.FIRME));
+                break;
+            case "bloque":
+                int top = num(f, 2, S);
+                n.agregarPlataforma(new Plataforma(num(f, 1, 0), top, num(f, 3, 0), num(f, 4, S) - top, Tipo.FIRME));
+                break;
+            case "isla":
+                n.agregarPlataforma(new Plataforma(num(f, 1, 0), num(f, 2, S), num(f, 3, 0), 24, Tipo.FIRME));
+                break;
+            case "tronco":
+                n.agregarPlataforma(new Plataforma(num(f, 1, 0), num(f, 2, S), num(f, 3, 0), 24, Tipo.TRONCO));
+                break;
+            case "fragil":
+                n.agregarPlataforma(new Plataforma(num(f, 1, 0), num(f, 2, S), num(f, 3, 0), 24, Tipo.FRAGIL));
+                break;
+            case "lecho":
+                n.agregarPlataforma(new Plataforma(num(f, 1, 0), FONDO_RIO, num(f, 2, 0), 40, Tipo.LECHO));
+                break;
+            case "rio":
+                n.agregarObstaculo(new Rio(num(f, 1, 0), 456, num(f, 2, 0), 104, 1));
+                break;
+            case "trampa":
+                n.agregarObstaculo(new Trampa(num(f, 1, 0), num(f, 2, S) - 24));
+                break;
+            case "piedra":
+                n.agregarPuntoDistractor(num(f, 1, 0), num(f, 2, S));
+                break;
+            case "animal":
+                n.agregarAnimal(crearAnimal(f[1], num(f, 2, 0)));
+                break;
+            case "cazador":
+                n.agregarEnemigo(crearCazador(f));
+                break;
+            case "serpiente":
+                Serpiente s = FABRICA.crearSerpiente();
+                s.setPosicion(num(f, 1, 0), S - s.getAlto());
+                s.configurarPatrulla(num(f, 2, 0), num(f, 3, 0));
+                n.agregarEnemigo(s);
+                break;
+            default:
+                throw new IllegalArgumentException("palabra desconocida: " + f[0]);
         }
-        n.agregarObstaculo(new Rio(700, 456, 1500, 104, 1));
-        for (int x : new int[] {300, 520, 2400, 2750, 3050}) {
-            n.agregarObstaculo(new Trampa(x, S - 24));
-        }
-        n.agregarAnimal(new MonoBebe(3250, S - 34));
+    }
 
+    private static AnimalAtrapado crearAnimal(String tipo, int x) {
+        switch (tipo) {
+            case "tucan":
+                return new Tucan(x, S - 30);
+            case "mono":
+                return new MonoBebe(x, S - 34);
+            case "jaguar":
+                return new JaguarCachorro(x, S - 32);
+            default:
+                throw new IllegalArgumentException("animal desconocido: " + tipo);
+        }
+    }
+
+    private static Cazador crearCazador(String[] f) {
         Cazador c = FABRICA.crearCazador();
-        c.setPosicion(3450, S - c.getAlto());
-        c.configurarPatrulla(3380, 3640);
-        c.setLanzaPiedras(true);
-        n.agregarEnemigo(c);
-
-        for (int x : new int[] {2450, 2900, 3150, 650, 300}) {
-            n.agregarPuntoDistractor(x);
-        }
-        return n;
+        c.setPosicion(num(f, 1, 0), S - c.getAlto());
+        c.configurarPatrulla(num(f, 2, 0), num(f, 3, 0));
+        List<String> opciones = List.of(f).subList(Math.min(4, f.length), f.length);
+        c.setLanzaPiedras(opciones.contains("piedras"));
+        c.setPersigueAlDetectar(opciones.contains("persigue"));
+        return c;
     }
-
-
-    private static Nivel nivel3(Jugador j) {
-        Nivel n = new Nivel(3, j, 3600, "Nivel 3 — Las Ruinas Escondidas");
-        n.setTema(3);
-        int[][] suelo = {{0, 600}, {850, 500}, {1700, 500}, {2600, 1000}};
-        for (int[] s : suelo) {
-            n.agregarPlataforma(new Plataforma(s[0], S, s[1], 100, Tipo.FIRME));
-        }
-        int[][] fragiles = {{640, 440}, {760, 420}, {1380, 440}, {1520, 420}, {1620, 440},
-            {2230, 440}, {2370, 420}, {2490, 440}};
-        for (int[] f : fragiles) {
-            n.agregarPlataforma(new Plataforma(f[0], f[1], 80, 24, Tipo.FRAGIL));
-        }
-        int[][] altas = {{950, 360, 120}, {1120, 300, 120}, {2760, 360, 140}};
-        for (int[] a : altas) {
-            n.agregarPlataforma(new Plataforma(a[0], a[1], a[2], 24, Tipo.FIRME));
-        }
-        for (int x : new int[] {350, 1050, 1900, 2800}) {
-            n.agregarObstaculo(new Trampa(x, S - 24));
-        }
-
-        Cazador c = FABRICA.crearCazador();
-        c.setPosicion(1000, S - c.getAlto());
-        c.configurarPatrulla(900, 1300);
-        c.setPersigueAlDetectar(true);
-        n.agregarEnemigo(c);
-
-        Serpiente s = FABRICA.crearSerpiente();
-        s.setPosicion(1800, S - s.getAlto());
-        s.configurarPatrulla(1750, 2130);
-        n.agregarEnemigo(s);
-
-        n.agregarAnimal(new JaguarCachorro(3430, S - 30));
-        return n;
-    }
-
 
 
     public static void prepararCampamento(Nivel n) {

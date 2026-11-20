@@ -5,9 +5,9 @@ import java.awt.Graphics2D;
 
 public class JaguarCachorro extends AnimalAtrapado {
     public JaguarCachorro(int x, int y) {
-        super(x, y, 46, 30, "Jaguar Cachorro", "romper el candado", 110);
+        super(x, y, 58, 32, "Jaguar Cachorro", "romper el candado", 110);
         this.distanciaSeguimiento = 105;
-        cargarSprite("jaguar.png");
+        cargarCuadros("jaguar.png", 2);
     }
 
     @Override
