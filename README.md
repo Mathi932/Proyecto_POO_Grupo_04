@@ -1,26 +1,26 @@
-# Kawsay: Rescate en la Selva 🐾🌲
+# Kawsay: Rescate en la Selva 
 
 Videojuego de plataformas 2D desarrollado en Java SE para el curso de **Programación Orientada a Objetos** de la **Universidad Peruana Cayetano Heredia**.
 
 ---
 
-## 👥 Integrantes (Grupo 04)
+## Integrantes (Grupo 04)
 * **Mathias Veramendi**
 * **Ríos Villar Juan de Dios**
 * **Barzola Sebastián**
 * **Elmer David**
 
-## 👨‍🏫 Docentes
+## Docentes
 * **MSc. Wilder Nina Choquehuayta** (Profesor Adjunto Principal)
 * **MSc. Percy Wilianson Lovón Ramos** (Profesor Adjunto Auxiliar 1)
 * **Dr. Emanuel Ortiz Ortiz** (Profesor Adjunto Auxiliar 2)
 
 ---
 
-## 🎮 Descripción del Proyecto
+## Descripción del Proyecto
 El jugador controla a **Amaru**, un explorador comprometido con el rescate y preservación de la fauna amazónica frente a cazadores clandestinos y trampas en la selva. El proyecto implementa los pilares de la POO, modularidad y patrones de diseño.
 
-### 🛠️ Características Técnicas
+### Características Técnicas
 * **Arquitectura:** Game Loop a 60 FPS desacoplado (`GamePanel`), renderizado con Swing y Java2D. 32 clases organizadas en paquetes (`core`, `modelo`, `niveles`, `niveles.estado`, `patrones`, `recursos`, `servicios`, `ui`).
 * **Estilo visual (pixel art):** los sprites PNG están en `src/main/resources/sprites` y los carga la clase `Sprites` (caché, recorte de cuadros de animación y dibujado ×2). El mundo se dibuja en un buffer de 480×270 que se amplía al doble sin suavizado; el HUD y los menús se dibujan encima a resolución completa. Si falta un PNG, cada clase usa su dibujo de respaldo con formas de Java2D.
 * **Tipografía:** fuente pixel *Press Start 2P* (licencia OFL, en `src/main/resources/fonts`), cargada por `Fuente`; los menús, controles, pausa y pantallas finales los dibuja `Pantallas`.
@@ -36,7 +36,7 @@ El jugador controla a **Amaru**, un explorador comprometido con el rescate y pre
 
 ---
 
-## ⌨️ Controles
+## Controles
 * **Moverse:** Flechas direccionales izquierda / derecha (o `A` / `D`)
 * **Saltar:** Flecha arriba / Barra espaciadora / `W`
 * **Liberar al animal atrapado:** mantener `E`
@@ -46,7 +46,7 @@ El jugador controla a **Amaru**, un explorador comprometido con el rescate y pre
 
 ---
 
-## 🗺️ Editar los niveles
+## Editar los niveles
 Los niveles son archivos de texto: `src/main/resources/niveles/nivel1.txt`, `nivel2.txt` y `nivel3.txt` (una línea = un elemento: `piso`, `bloque`, `isla`, `tronco`, `fragil`, `trampa`, `piedra`, `animal`, `cazador`, `serpiente`…). Las palabras y las reglas para que el nivel se pueda pasar están en `src/main/resources/niveles/LEEME.txt`.
 
 ```bash
@@ -60,7 +60,7 @@ herramientas\validar-niveles.bat      # Windows
 
 ---
 
-## 🚀 Compilación y Ejecución
+## Compilación y Ejecución
 Requiere **Java 17 (o superior)** y **Apache Maven**:
 
 ```bash
