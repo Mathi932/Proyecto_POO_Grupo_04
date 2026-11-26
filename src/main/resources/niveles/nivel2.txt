@@ -26,8 +26,7 @@ tronco 2220 340 80
 tronco 2370 380 100
 tronco 2520 420 110
 tronco 2680 400 90
-tronco 3080 420 100
-tronco 3190 440 70
+tronco 3095 430 110
 
 # Islas de descanso en medio del río (la base es el fondo del río: y = 520)
 bloque 1760 400 220 520
@@ -44,7 +43,7 @@ trampa 520
 trampa 840
 trampa 3500
 trampa 3720
-trampa 4650
+trampa 4600
 
 # Piedras
 piedra 370 400

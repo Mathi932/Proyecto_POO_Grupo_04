@@ -31,7 +31,7 @@ El jugador controla a **Amaru**, un explorador comprometido con el rescate y pre
   * **Factory** — `FabricaEnemigos` crea los enemigos (`Cazador`, `Serpiente`) a partir de un tipo, sin que el nivel conozca la clase concreta.
   * **Observer** — `EstadisticasSubject` notifica el tiempo y la vida del jugador a los `Observador` registrados; el `HUD` es uno de ellos.
   * **State** — `Nivel` delega su comportamiento en un `EstadoNivel` (`Explorando` y `Huyendo`).
-* **API externa:** `APIClient` envía el tiempo total de la partida (POST JSON a JSONPlaceholder) en un hilo secundario, con timeouts de 3 s y modo offline.
+* **API externa:** APIClient registra la partida, los rescates y el resultado final en Supabase (API REST) con java.net.http.HttpClient, de forma asíncrona (CompletableFuture), sin bloquear el juego.
 * **Reglas del juego:** el tiempo total de la partida se muestra en el HUD; tras liberar a los animales hay una fase de huida contra reloj hasta la salida.
 
 ---

@@ -37,22 +37,28 @@ isla 3540 380 90
 isla 3660 310 70
 isla 3780 380 60
 
-# Mesa con trampa encima
-bloque 4100 390 300
-trampa 4240 390
+# Mesa con trampa encima (la trampa queda al centro, a 150 px de cada borde)
+bloque 4100 390 340
+trampa 4250 390
 
 # Trampas en el suelo
 trampa 520
-trampa 1500
-trampa 1680
+
+# Obstáculo púa - montículo - púa: las púas tocan los lados del bloque.
+# Se salta la primera púa subiendo al bloque y se baja saltando la segunda.
+trampa 1400
+bloque 1440 390 100
+trampa 1540
+
 trampa 3050
-trampa 3300
+bloque 3090 390 120
+trampa 3210
 
 # Piedras para lanzar
 piedra 1050 330
 piedra 2630 270
-piedra 1400
-piedra 3200
+piedra 1320
+piedra 3330
 
 # Animal atrapado (siempre al final) y su salida está al inicio
 animal tucan 4560

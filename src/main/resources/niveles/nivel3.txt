@@ -41,7 +41,7 @@ bloque 4900 390 100
 # Trampas
 trampa 380
 trampa 2250
-trampa 3600
+trampa 3500
 trampa 4300
 trampa 5100
 
@@ -52,9 +52,8 @@ piedra 2050
 piedra 3050
 piedra 4800
 
-# Enemigos: cazador x min max [piedras] [persigue] / serpiente x min max
+# Enemigos: cazador x min max [piedras] [persigue]  (la Serpiente jefe se crea en el campamento)
 cazador 1300 1100 1500 persigue
-serpiente 2100 2050 2500
 cazador 4300 4150 4400 persigue
 
 animal jaguar 5230

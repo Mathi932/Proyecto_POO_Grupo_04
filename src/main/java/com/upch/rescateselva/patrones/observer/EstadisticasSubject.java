@@ -3,7 +3,7 @@ package com.upch.rescateselva.patrones.observer;
 import java.util.ArrayList;
 import java.util.List;
 
-// PATRÓN OBSERVER: sujeto (notifica a los observadores registrados)
+// PATRÓN OBSERVER
 public class EstadisticasSubject {
     private final List<Observador> observadores = new ArrayList<>();
     private int segundos;
